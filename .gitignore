@@ -2,4 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+.Rapp.history
+.Rbuildignore
 biowrapr.Rproj
