@@ -13,7 +13,7 @@ to samples.}
 \item{fit}{An object of class \code{MArrayLM}, as created by a call to
 \code{limma::lmFit} or \code{limma::eBayes}.}
 
-\item{coef}{Column name specifying which coefficient or contrast
+\item{coef}{Column name or number specifying which coefficient or contrast
 of the linear model is of interest.}
 
 \item{geneSets}{Either a named list of pathways to be compared, or a vector of
@@ -24,12 +24,12 @@ probe names representing a single gene set.}
 }
 \value{
 A data frame with the following columns:
-\describe{
-  \item{One}{Pathway} Name of the pathway.
-  \item{Two}{logFC} Average log2 fold change of genes in the pathway.
-  \item{Three}{p.value} The gene set \emph{p}-value, as calculated using
+\itemize{
+  \item{'Pathway'} Name of the pathway.
+  \item{'logFC'} Average log2 fold change of genes in the pathway.
+  \item{'p.value'} The gene set \emph{p}-value, as calculated using
     \code{pdf.pVal}.
-  \item{Four}{q.value} The false discovery rate, as estimated using Storey's
+  \item{'q.value'} The false discovery rate, as estimated using Storey's
     \emph{q}-value method.
 }
 }
@@ -64,7 +64,8 @@ a much more significant \emph{p}-value with small sample sizes.
 # Fit limma model
 library(limma)
 eset <- matrix(rnorm(5000 * 10), nrow = 5000, ncol = 10)
-dimnames(eset) <- list(seq_len(nrow(eset)), paste0('S', seq_len(ncol(eset))))
+dimnames(eset) <- list(seq_len(nrow(eset)), 
+                       paste0('S', seq_len(ncol(eset))))
 clin <- data.frame(treat = rep(c("A", "B"), each = 5),
                       x1 = rnorm(10),
                       x2 = runif(10))
@@ -85,13 +86,13 @@ qlim(eset, fit, coef = 2, geneSets)
 }
 \references{
 Smyth, G.K. (2004). "Linear models and empirical Bayes methods for assessing
-differential expression in microarray experiments." \emph{Statistical Applications
-in Genetics and Molecular Biology}, \emph{3}(1).
+differential expression in microarray experiments." \emph{Stat. Appl. Genet. 
+Molec. Biol.}, \emph{3}(1).
 \url{http://www.statsci.org/smyth/pubs/ebayes.pdf}
 
 Yaari, G. Bolen, C.R., Thakar, J. & Kleinstein, S.H. (2013). "Quantitative set
 analysis for gene expression: a method to quantify gene set differential expression
-including gene-gene correlations." \emph{Nucleic Acids Research}, \emph{41}(18): e170.
+including gene-gene correlations." \emph{Nucleic Acids Res.}, \emph{41}(18): e170.
 \url{https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3794608/}
 
 Turner, J.A., Bolen, C.R. & Blankenship, D.M. (2015). "Quantitative gene set analysis
@@ -100,6 +101,6 @@ generalized for repeated measures, confounder adjustment, and continuous covaria
 \url{http://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0707-9}
 
 Storey, J. & Tibshirani, R. (2003). "Statistical significance for genomewide
-studies." \emph{Proc Natl Acad Sci}, \emph{100}(16): 9440–9445.
+studies." \emph{Proc. Natl. Acad. Sci.}, \emph{100}(16): 9440–9445.
 \url{http://www.pnas.org/content/100/16/9440.full}
 }
