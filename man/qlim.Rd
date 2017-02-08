@@ -4,12 +4,11 @@
 \alias{qlim}
 \title{Run QuSAGE on any limma model fit}
 \usage{
-qlim(mat, fit, coef, geneSets, n.points = 2^14)
+qlim(dat, fit, coef, geneSets, n.points = 2^14)
 }
 \arguments{
-\item{mat}{Omic data matrix with rows of features and columns of samples.
-Rownames must match those stored in \code{fit}, as well as the probe names
-passed to \code{geneSets}.}
+\item{dat}{Omic data matrix with rows corresponding to probes and columns
+to samples.}
 
 \item{fit}{An object of class \code{MArrayLM}, as created by a call to
 \code{limma::lmFit} or \code{limma::eBayes}.}
@@ -31,7 +30,7 @@ A data frame with the following columns:
   \item{Three}{p.value} The gene set \emph{p}-value, as calculated using
     \code{pdf.pVal}.
   \item{Four}{q.value} The false discovery rate, as estimated using Storey's
-    method.
+    \emph{q}-value method.
 }
 }
 \description{
@@ -62,9 +61,26 @@ also be useful to test higher values of this parameter, as it can often result i
 a much more significant \emph{p}-value with small sample sizes.
 }
 \examples{
+# Fit limma model
 library(limma)
-data(Nevins)
-mat <-
+eset <- matrix(rnorm(5000 * 10), nrow = 5000, ncol = 10)
+dimnames(eset) <- list(seq_len(nrow(eset)), paste0('S', seq_len(ncol(eset))))
+clin <- data.frame(treat = rep(c("A", "B"), each = 5),
+                      x1 = rnorm(10),
+                      x2 = runif(10))
+des <- model.matrix(~ treat + x1 + x2, data = clin)
+fit <- eBayes(lmFit(eset, des))
+
+# Create list of differentially expressed pathways
+geneSets = list()
+for (i in 0:10) {
+  genes <- ((30 * i) + 1):(30 * (i + 1))
+  eset[genes, clin$treat == "B"] <- eset[genes, clin$treat == "B"] + rnorm(1)
+  geneSets[[paste("Set", i)]] <- genes
+}
+
+# Run qlim
+qlim(eset, fit, coef = 2, geneSets)
 
 }
 \references{
