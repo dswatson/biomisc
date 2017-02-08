@@ -3,9 +3,8 @@
 #' This function is a wrapper for the QuSAGE algorithm, which tests for enrichment
 #' across pathways or gene sets.
 #'
-#' @param mat Omic data matrix with rows of features and columns of samples.
-#'   Rownames must match those stored in \code{fit}, as well as the probe names
-#'   passed to \code{geneSets}.
+#' @param dat Omic data matrix with rows corresponding to probes and columns
+#'   to samples.
 #' @param fit An object of class \code{MArrayLM}, as created by a call to
 #'   \code{limma::lmFit} or \code{limma::eBayes}.
 #' @param coef Column name specifying which coefficient or contrast
@@ -45,7 +44,7 @@
 #'   \item{Three}{p.value} The gene set \emph{p}-value, as calculated using
 #'     \code{pdf.pVal}.
 #'   \item{Four}{q.value} The false discovery rate, as estimated using Storey's
-#'     method.
+#'     \emph{q}-value method.
 #' }
 #'
 #' @references
@@ -69,9 +68,26 @@
 #' \url{http://www.pnas.org/content/100/16/9440.full}
 #'
 #' @examples
+#' # Fit limma model
 #' library(limma)
-#' data(Nevins)
-#' mat <-
+#' eset <- matrix(rnorm(5000 * 10), nrow = 5000, ncol = 10)
+#' dimnames(eset) <- list(seq_len(nrow(eset)), paste0('S', seq_len(ncol(eset))))
+#' clin <- data.frame(treat = rep(c("A", "B"), each = 5),
+#'                       x1 = rnorm(10),
+#'                       x2 = runif(10))
+#' des <- model.matrix(~ treat + x1 + x2, data = clin)
+#' fit <- eBayes(lmFit(eset, des))
+#' 
+#' # Create list of differentially expressed pathways
+#' geneSets = list()
+#' for (i in 0:10) {
+#'   genes <- ((30 * i) + 1):(30 * (i + 1))
+#'   eset[genes, clin$treat == "B"] <- eset[genes, clin$treat == "B"] + rnorm(1)
+#'   geneSets[[paste("Set", i)]] <- genes
+#' }
+#' 
+#' # Run qlim
+#' qlim(eset, fit, coef = 2, geneSets)
 #'
 #' @export
 #' @import limma
@@ -81,29 +97,28 @@
 #'
 
 
-qlim <- function(mat,
+qlim <- function(dat,
                  fit,
                  coef,
                  geneSets,
                  n.points = 2^14) {
 
   # Prep data
-  j <- which(colnames(fit$coefficients) == coef)
-  se <- sqrt(fit$s2.post) * fit$stdev.unscaled[, j]
-  sd_a <- se / (fit$sigma * fit$stdev.unscaled[, j])
+  se <- sqrt(fit$s2.post) * fit$stdev.unscaled[, coef]
+  sd_a <- se / (fit$sigma * fit$stdev.unscaled[, coef])
   sd_a[is.infinite(sd_a)] <- 1
-  resid_mat <- residuals.MArrayLM(fit, mat)
-  overlap <- sapply(geneSets, function(x) sum(x %in% rownames(mat)))
+  resid_mat <- residuals.MArrayLM(fit, dat)
+  overlap <- sapply(geneSets, function(x) sum(x %in% rownames(dat)))
   geneSets <- geneSets[overlap > 0]
 
   # Run QuSAGE functions
-  res <- newQSarray(mean = fit$coefficients[, j],   # Create QSarray obj
+  res <- newQSarray(mean = fit$coefficients[, coef],  # Create QSarray obj
                       SD = se,
                 sd.alpha = sd_a,
                      dof = fit$df.total,
-                  labels = rep('Resid', ncol(mat)))
-  res <- aggregateGeneSet(res, geneSets, n.points)   # PDF per gene set
-  res <- calcVIF(resid_mat, res, useCAMERA = FALSE)  # VIF on resid_mat
+                  labels = rep('Resid', ncol(dat)))
+  res <- aggregateGeneSet(res, geneSets, n.points)    # PDF per gene set
+  res <- calcVIF(resid_mat, res, useCAMERA = FALSE)   # VIF on resid_mat
 
   # Export
   out <- qsTable(res, number = Inf, sort.by = 'p') %>%
@@ -111,7 +126,7 @@ qlim <- function(mat,
            Pathway = pathway.name,
              logFC = log.fold.change) %>%
     mutate(q.value = qvalue(p.value)$qvalues) %>%
-    select(Module:p.value, q.value)
+    select(Pathway:p.value, q.value)
   return(out)
 
 }
