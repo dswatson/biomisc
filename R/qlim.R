@@ -110,6 +110,9 @@ qlim <- function(dat,
   if (nrow(dat) != nrow(fit) || ncol(dat) != nrow(fit$design)) {
     stop('dat is not conformal with fit.')
   }
+  if (!identical(rownames(dat), rownames(fit))) {
+    stop('dat and fit must have identical rownames.')
+  }
   if (!is(fit, 'MArrayLM')) {
     stop('fit must be an MArrayLM object.')
   }
@@ -127,9 +130,10 @@ qlim <- function(dat,
   
   # Prep data
   dat <- getEAWP(dat)
+  dat <- dat$exprs
   se <- sqrt(fit$s2.post) * fit$stdev.unscaled[, coef]
-  sd_a <- se / (fit$sigma * fit$stdev.unscaled[, coef])
-  sd_a[is.infinite(sd_a)] <- 1
+  sd.a <- se / (fit$sigma * fit$stdev.unscaled[, coef])
+  sd.a[is.infinite(sd.a)] <- 1
   resid_mat <- residuals.MArrayLM(fit, dat)
   overlap <- sapply(geneSets, function(p) sum(p %in% rownames(dat)))
   geneSets <- geneSets[overlap > 1]
@@ -137,7 +141,7 @@ qlim <- function(dat,
   # Run QuSAGE functions
   res <- newQSarray(mean = fit$coefficients[, coef],  # Create QSarray obj
                       SD = se,
-                sd.alpha = sd_a,
+                sd.alpha = sd.a,
                      dof = fit$df.total,
                   labels = rep('resid', ncol(dat)))
   res <- aggregateGeneSet(res, geneSets, n.points)    # PDF per gene set
