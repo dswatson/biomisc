@@ -19,7 +19,7 @@
 #' \code{qlim} combines the statistical flexibility and empirical Bayes methods of 
 #' \code{limma} with the specificity and sensitivity of the QuSAGE algorithm for 
 #' detecting pathway enrichment. Simulations have shown that this pipeline 
-#' outperforms both package's independent methods for gene set analysis in 
+#' outperforms each package's independent methods for gene set analysis in 
 #' complex experimental designs, namely \code{\link[limma]{camera}} and 
 #' \code{link[qusage]{qgen}}. See Watson & John, forthcoming.
 #'
@@ -124,25 +124,22 @@ qlim <- function(dat,
     stop(paste0('"', coef, '" not found in fit$coefficients. If passing a string to ',
                 'coef, make sure it matches one of colnames(fit$coefficients).'))
   } 
-  dat <- getEAWP(dat)
-  if (is.null(colnames(dat))) {
-    colnames(dat) <- paste0('S', seq_len(ncol(dat)))
-  }
   
   # Prep data
+  dat <- getEAWP(dat)
   se <- sqrt(fit$s2.post) * fit$stdev.unscaled[, coef]
   sd_a <- se / (fit$sigma * fit$stdev.unscaled[, coef])
   sd_a[is.infinite(sd_a)] <- 1
   resid_mat <- residuals.MArrayLM(fit, dat)
   overlap <- sapply(geneSets, function(p) sum(p %in% rownames(dat)))
-  geneSets <- geneSets[overlap > 0]
+  geneSets <- geneSets[overlap > 1]
 
   # Run QuSAGE functions
   res <- newQSarray(mean = fit$coefficients[, coef],  # Create QSarray obj
                       SD = se,
                 sd.alpha = sd_a,
                      dof = fit$df.total,
-                  labels = paste('resid', colnames(dat), sep = '_'))
+                  labels = rep('resid', ncol(dat)))
   res <- aggregateGeneSet(res, geneSets, n.points)    # PDF per gene set
   res <- calcVIF(resid_mat, res, useCAMERA = FALSE)   # VIF on resid_mat
 
