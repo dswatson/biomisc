@@ -136,7 +136,7 @@ qlim <- function(dat,
   sd.a[is.infinite(sd.a)] <- 1
   resid_mat <- residuals.MArrayLM(fit, dat)
   overlap <- sapply(geneSets, function(p) sum(p %in% rownames(dat)))
-  geneSets <- geneSets[overlap > 1]
+  geneSets <- geneSets[overlap > 0]
 
   # Run QuSAGE functions
   res <- newQSarray(mean = fit$coefficients[, coef],  # Create QSarray obj
