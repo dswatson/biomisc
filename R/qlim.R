@@ -83,7 +83,7 @@
 #' geneSets = list()
 #' for (i in 0:10) {
 #'   genes <- ((30 * i) + 1):(30 * (i + 1))
-#'   eset[genes, clin$treat == "B"] <- eset[genes, clin$treat == "B"] + rnorm(1)
+#'   eset[genes, clin$treat == "trt"] <- eset[genes, clin$treat == "trt"] + rnorm(1)
 #'   geneSets[[paste("Set", i)]] <- genes
 #' }
 #' 
