@@ -5,7 +5,7 @@
 #'
 #' @param dat Omic data matrix or matrix-like object with rows corresponding to 
 #'   probes and columns to samples. Any object that can be processed by 
-#'   \code{\link[limma]{getEAWP}} is acceptable.
+#'   \code{\link[limma]{getEAWP}} is acceptable. 
 #' @param fit An object of class \code{\link[limma]{MArrayLM}}, as created by a call to
 #'   \code{\link[limma]{eBayes}}.
 #' @param coef Column name or number specifying which coefficient or contrast
@@ -129,12 +129,12 @@ qlim <- function(dat,
   } 
   
   # Prep data
+  resid_mat <- residuals(fit, dat)
   dat <- getEAWP(dat)
   dat <- dat$exprs
   se <- sqrt(fit$s2.post) * fit$stdev.unscaled[, coef]
   sd.a <- se / (fit$sigma * fit$stdev.unscaled[, coef])
   sd.a[is.infinite(sd.a)] <- 1
-  resid_mat <- residuals.MArrayLM(fit, dat)
   overlap <- sapply(geneSets, function(p) sum(p %in% rownames(dat)))
   geneSets <- geneSets[overlap > 0]
 
