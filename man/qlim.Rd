@@ -7,11 +7,12 @@
 qlim(dat, fit, coef, geneSets, n.points = 2^14)
 }
 \arguments{
-\item{dat}{Omic data matrix with rows corresponding to probes and columns
-to samples.}
+\item{dat}{Omic data matrix or matrix-like object with rows corresponding to 
+probes and columns to samples. Any object that can be processed by 
+\code{\link[limma]{getEAWP}} is acceptable.}
 
-\item{fit}{An object of class \code{MArrayLM}, as created by a call to
-\code{limma::lmFit} or \code{limma::eBayes}.}
+\item{fit}{An object of class \code{\link[limma]{MArrayLM}}, as created by a call to
+\code{\link[limma]{eBayes}}.}
 
 \item{coef}{Column name or number specifying which coefficient or contrast
 of the linear model is of interest.}
@@ -34,29 +35,27 @@ A data frame with the following columns:
 }
 }
 \description{
-This function is a wrapper for the QuSAGE algorithm, which tests for enrichment
-across pathways or gene sets.
+This function is a wrapper for the QuSAGE algorithm, which tests for pathway 
+enrichment, designed for easy integration with limma.
 }
 \details{
-\code{qlim} extends the methodology of \code{qusage::qgen} to studies of
-arbitrary design complexity by operating directly on the output of a \code{limma}
-model fit. Taking advantage of that package's extremely flexible statistical
-framework, which allows for continuous and/or categorical covariates, probe and/or
-sample weights, intra-class correlation estimates, and empirical Bayes shrinkage,
-\code{qlim} can take the results of any omic experiment analyzable in \code{limma}
-and produce a table of enriched pathways for any given coefficient. See \pkg{limma}
-and \pkg{qusage} for more details.
+\code{qlim} combines the statistical flexibility and empirical Bayes methods of 
+\code{limma} with the specificity and sensitivity of the QuSAGE algorithm for 
+detecting pathway enrichment. Simulations have shown that this pipeline 
+outperforms each package's independent methods for gene set analysis in 
+complex experimental designs, namely \code{\link[limma]{camera}} and 
+\code{link[qusage]{qgen}}. See Watson & John, forthcoming.
 
 By default \code{n.points} is set to 2^14, or 16,384 points, which will give very
 accurate \emph{p}-values in most cases. Sampling at more points will increase the
 accuracy of the resulting \emph{p}-values, but will also linearly increase the
 amount of time needed to calculate the result. With larger sample sizes, as few
 as 1/4 this number of points can be used without seriously affecting the accuracy
-of the resulting \emph{p}-values, however, when there are a small number of samples
+of the resulting \emph{p}-values. However, when there are a small number of samples
 (i.e., fewer than 8 samples total), the \emph{t}-distribution must be sampled over
 a much wider range, and the number of points needed for sampling should be
 increased accordingly. It is recommended that when running \code{qlim} with fewer
-than 8 samples the number of points be increased to at least 2^15 or 2^16. It may
+than 8 samples, the number of points be increased to at least 2^15 or 2^16. It may
 also be useful to test higher values of this parameter, as it can often result in
 a much more significant \emph{p}-value with small sample sizes.
 }
@@ -66,17 +65,18 @@ library(limma)
 eset <- matrix(rnorm(5000 * 10), nrow = 5000, ncol = 10)
 dimnames(eset) <- list(seq_len(nrow(eset)), 
                        paste0('S', seq_len(ncol(eset))))
-clin <- data.frame(treat = rep(c("A", "B"), each = 5),
+clin <- data.frame(treat = rep(c("ctl", "trt"), each = 5),
+                   batch = rep(c("b1", "b2"), times = 5),
                       x1 = rnorm(10),
                       x2 = runif(10))
-des <- model.matrix(~ treat + x1 + x2, data = clin)
+des <- model.matrix(~ treat + batch + x1 + x2, data = clin)
 fit <- eBayes(lmFit(eset, des))
 
 # Create list of differentially expressed pathways
 geneSets = list()
 for (i in 0:10) {
   genes <- ((30 * i) + 1):(30 * (i + 1))
-  eset[genes, clin$treat == "B"] <- eset[genes, clin$treat == "B"] + rnorm(1)
+  eset[genes, clin$treat == "trt"] <- eset[genes, clin$treat == "trt"] + rnorm(1)
   geneSets[[paste("Set", i)]] <- genes
 }
 
