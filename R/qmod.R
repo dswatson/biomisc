@@ -205,7 +205,7 @@ qmod <- function(fit,
     dds_res <- as.data.frame(dds_res) %>% na.omit()
     fit <- fit[rownames(dds_res), ]
     if (is.null(sizeFactors(fit))) {
-      signal_mat <- assays(fit)[['mu']]
+      signal_mat <- assays(fit)[['mu']] / assays(fit)[['normalizationFactors']]
     } else {
       signal_mat <- t(t(assays(fit)[['mu']]) / sizeFactors(fit))
     }
