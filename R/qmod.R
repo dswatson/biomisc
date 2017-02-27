@@ -9,6 +9,9 @@
 #' @param dat An expression matrix or matrix-like object, with rows corresponding to
 #'   probes and columns to samples. Only necessary if \code{fit} is an \code{MArrayLM}
 #'   object.
+#' @param trans Variance stabilizing transformation to be applied to the data if 
+#'   \code{fit} is a \code{DESeqDataSet}. Must be one \code{"lcpm", "vst"} or 
+#'   \code{"rlog"}. See Details. 
 #' @param coef Column name or number specifying which coefficient of the model is of
 #'   interest. 
 #' @param contrast Character or numeric vector of length two, specifying the column
@@ -22,6 +25,15 @@
 #'
 #' @details
 #' ### INTRO TO QMOD? ###
+#' \code{qmod} combines the  
+#' 
+#' 
+#' the statistical flexibility and empirical Bayes methods of 
+#' \code{limma} with the specificity and sensitivity of the QuSAGE algorithm for 
+#' detecting pathway enrichment. Simulations have shown that this pipeline 
+#' outperforms each package's independent methods for gene set analysis in 
+#' complex experimental designs, namely \code{\link[limma]{camera}} and 
+#' \code{link[qusage]{qgen}}. See Watson & John, forthcoming.
 #' 
 #' ### SOMETHING ON MArrayLM vs. DESeqDataSet OBJECTS ###
 #' 
@@ -98,7 +110,8 @@
 #'
 #' @export
 #' @importFrom limma eBayes getEAWP 
-#' @import DESeq2 
+#' @importFrom DESeq2 counts results assays 
+#' @importFrom edgeR DGEList calcNormFactors cpm
 #' @import qusage
 #' @import qvalue
 #' @import dplyr
@@ -106,6 +119,7 @@
 
 qmod <- function(fit,
                  dat = NULL,
+                 trans = 'lcpm',
                  coef,
                  contrast = NULL,
                  geneSets,
@@ -163,7 +177,7 @@ qmod <- function(fit,
   if (is(fit, 'MArrayLM')) {
     if (is.null(fit$t) && is.null(fit$F) && is.null(contrast)) {
       fit <- eBayes(fit)
-      warning('Standard errors for fit had not been moderated. Running eBayes before ',
+      warning('Standard errors for fit have not been moderated. Running eBayes before ',
               'testing for enrichment. See "?eBayes" for more info.')
     }
     if (!is.null(fit$t) && !is.null(fit$F) && is.null(coef)) {
@@ -179,7 +193,6 @@ qmod <- function(fit,
   
     dat <- getEAWP(dat)
     dat <- dat$exprs
-    resid_mat <- residuals(fit, dat)
     if (is.null(coef)) {
       coef <- 'Contrast'
       suppressWarnings(
@@ -189,50 +202,61 @@ qmod <- function(fit,
       fit <- contrasts.fit(fit, cm)
       fit <- eBayes(fit)
     } 
+    resid_mat <- residuals(fit, dat)
     mean <- fit$coefficients[, coef] 
     SD <- sqrt(fit$s2.post) * fit$stdev.unscaled[, coef]
-    sd.alpha <- se / (fit$sigma * fit$stdev.unscaled[, coef])
-    sd.alpha[is.infinite(sd.alpha)] <- 1
+    sd.alpha <- SD / (fit$sigma * fit$stdev.unscaled[, coef])
+    sd.alpha[is.infinite(sd.alpha)] <- 1L
     dof <- fit$df.total
     
   } else {
     
+    cnts <- counts(fit, normalized = FALSE)
+    keep <- rowSums(cpm(cnts) > 1L) >= 1L
+    fit <- fit[keep, , drop = FALSE]
+    cnts <- cnts[keep, , drop = FALSE]
     if (is.null(contrast)) {
-      dds_res <- results(fit, name = coef)
+      dds_res <- results(fit, name = coef, independentFiltering = FALSE)
     } else {
-      dds_res <- results(fit, contrast = list(contrast))
+      dds_res <- results(fit, contrast = list(contrast), 
+                         independentFiltering = FALSE)
     }
-    dds_res <- as.data.frame(dds_res) %>% na.omit()
-    fit <- fit[rownames(dds_res), ]
-    if (is.null(sizeFactors(fit))) {
-      signal_mat <- assays(fit)[['mu']] / assays(fit)[['normalizationFactors']]
-    } else {
-      signal_mat <- t(t(assays(fit)[['mu']]) / sizeFactors(fit))
-    }
-    resid_mat <- counts(fit, normalized = TRUE) - signal_mat
+    cnts <- DGEList(cnts)
+    cnts <- calcNormFactors(cnts, method = 'RLE')
+    cnts <- cpm(cnts, log = TRUE)
+    signal_mat <- assays(fit)[['mu']]
+    signal_mat <- DGEList(signal_mat)
+    signal_mat <- calcNormFactors(signal_mat, method = 'RLE')
+    signal_mat <- cpm(signal_mat, log = TRUE)
+    resid_mat <- cnts - signal_mat
     mean <- dds_res$log2FoldChange
     SD <- dds_res$lfcSE
-    sd.alpha <- rep(1, nrow(fit))
-    dof <- ncol(fit) - p
+    sd.alpha <- rep(1L, times = nrow(fit))
+    dof <- rep((ncol(fit) - p), times = nrow(fit)) 
     
+  }   
+  names(mean) <- names(SD) <- names(sd.alpha) <- names(dof) <- rownames(fit)
+  overlap <- sapply(geneSets, function(g) sum(g %in% rownames(fit)))
+  if (is.list(geneSets)) {
+    geneSets <- geneSets[overlap > 1]
+  } else {
+    geneSets <- geneSets[overlap > 0]
   }
-  overlap <- sapply(geneSets, function(p) sum(p %in% rownames(fit)))
-  geneSets <- geneSets[overlap > 0]
-
+  
   # Run QuSAGE functions
-  res <- newQSarray(mean = mean,                     # Create QSarray obj
-                      SD = SD,
-                sd.alpha = sd.alpha,
-                     dof = dof,
-                  labels = rep('resid', ncol(fit)))
-  res <- aggregateGeneSet(res, geneSets, n.points)   # PDF per gene set
-  res <- calcVIF(resid_mat, res, useCAMERA = FALSE)  # VIF on resid_mat
+  res <- newQSarray(mean = mean,                       # Create QSarray obj
+                    SD = SD,
+                    sd.alpha = sd.alpha,
+                    dof = dof,
+                    labels = rep('resid', ncol(fit)))
+  res <- aggregateGeneSet(res, geneSets, n.points)     # PDF per gene set
+  res <- calcVIF(resid_mat, res, useCAMERA = FALSE)    # VIF on resid_mat
 
   # Export
   out <- qsTable(res, number = Inf, sort.by = 'p') %>%
-    rename(p.value = p.Value,
-           Pathway = pathway.name,
-             logFC = log.fold.change) %>%
+    rename(Pathway = pathway.name,
+           logFC = log.fold.change,
+           p.value = p.Value) %>%
     mutate(q.value = qvalue(p.value)$qvalues) %>%
     select(Pathway:p.value, q.value)
   return(out)
@@ -240,3 +264,7 @@ qmod <- function(fit,
 }
 
 # Add arguments to tweak internal calls to limma::eBayes and/or DESeq::results functions?
+# Extend to ANOVA F-tests/likelihood ratio tests?
+
+
+
