@@ -9,11 +9,15 @@
 #' @param dat An expression matrix or matrix-like object, with rows corresponding to
 #'   probes and columns to samples. Only necessary if \code{fit} is an \code{MArrayLM}
 #'   object.
-#' @param trans Variance stabilizing transformation to be applied to the data if 
-#'   \code{fit} is a \code{DESeqDataSet}. Must be one \code{"lcpm", "vst"} or 
-#'   \code{"rlog"}. See Details. 
+#' @param filt Number of libraries in which each probe must have at least one 
+#'   log2-count per million. Only relevant if \code{fit} is a \code{DESeqDataSet}, in 
+#'   which case the normality of transformed residuals at various values of 
+#'   \code{filter} should be checked prior to running \code{qmod}. See \code{\link{
+#'   check_resid}}.
 #' @param coef Column name or number specifying which coefficient of the model is of
-#'   interest. 
+#'   interest. Alternatively, a vector of three or more such strings or numbers, in 
+#'   which case pathways are ranked by the \emph{F}-statistic for that set of 
+#'   coefficients.
 #' @param contrast Character or numeric vector of length two, specifying the column
 #'   names or numbers to be contrasted. The first and second elements will be the 
 #'   numerator and denominator, respectively, of the fold change calculation. 
@@ -24,6 +28,8 @@
 #'   \emph{t}-distribution. See Details.
 #'
 #' @details
+#' QuSAGE 
+#' 
 #' ### INTRO TO QMOD? ###
 #' \code{qmod} combines the  
 #' 
@@ -36,6 +42,8 @@
 #' \code{link[qusage]{qgen}}. See Watson & John, forthcoming.
 #' 
 #' ### SOMETHING ON MArrayLM vs. DESeqDataSet OBJECTS ###
+#' 
+#' If fit is a voom object, make sure to run lcpm(dat).
 #' 
 #' By default \code{n.points} is set to 2^14, or 16,384 points, which will give very
 #' accurate \emph{p}-values in most cases. Sampling at more points will increase the
@@ -119,14 +127,14 @@
 
 qmod <- function(fit,
                  dat = NULL,
-                 trans = 'lcpm',
+                 filt = NULL,
                  coef,
                  contrast = NULL,
                  geneSets,
                  n.points = 2^14) {
 
   # Preliminaries
-  if (nrow(fit) < 3) {
+  if (nrow(fit) < 3L) {
     stop('fit must have at least three probes.')
   }
   if (is(fit, 'MArrayLM')) {
@@ -164,7 +172,7 @@ qmod <- function(fit,
       stop(paste("No coef number", coef, "found in fit's design matrix."))
     }
   } else if (is.null(coef)) {
-    if (length(contrast) != 2) {
+    if (length(contrast) != 2L) {
       stop('contrast must be a vector of length 2.')
     }
     if ((is.character(contrast) && any(!contrast %in% coef)) ||
@@ -178,21 +186,19 @@ qmod <- function(fit,
     if (is.null(fit$t) && is.null(fit$F) && is.null(contrast)) {
       fit <- eBayes(fit)
       warning('Standard errors for fit have not been moderated. Running eBayes before ',
-              'testing for enrichment. See "?eBayes" for more info.')
+              'testing for enrichment. See ?eBayes for more info.')
     }
     if (!is.null(fit$t) && !is.null(fit$F) && is.null(coef)) {
       stop('Standard errors for fit must not be moderated when passing a contrast ',
            'to qmod. Use an lmFit output instead. The function will internally ',
            'create the appropriate contrast matrix and run eBayes on that. See ',
-           '"?contrasts.fit" for more info.')
+           '?contrasts.fit for more info.')
     }
   }
   
   # Prep data
   if (is(fit, 'MArrayLM')) {
-  
-    dat <- getEAWP(dat)
-    dat <- dat$exprs
+    dat <- getEAWP(dat)$exprs
     if (is.null(coef)) {
       coef <- 'Contrast'
       suppressWarnings(
@@ -208,39 +214,30 @@ qmod <- function(fit,
     sd.alpha <- SD / (fit$sigma * fit$stdev.unscaled[, coef])
     sd.alpha[is.infinite(sd.alpha)] <- 1L
     dof <- fit$df.total
-    
   } else {
-    
     cnts <- counts(fit, normalized = FALSE)
     keep <- rowSums(cpm(cnts) > 1L) >= 1L
     fit <- fit[keep, , drop = FALSE]
-    cnts <- cnts[keep, , drop = FALSE]
+    cnts <- lcpm(counts(fit, normalized = FALSE))
+    signal_mat <- lcpm(assays(fit)[['mu']])
+    resid_mat <- cnts - signal_mat
     if (is.null(contrast)) {
       dds_res <- results(fit, name = coef, independentFiltering = FALSE)
     } else {
       dds_res <- results(fit, contrast = list(contrast), 
                          independentFiltering = FALSE)
     }
-    cnts <- DGEList(cnts)
-    cnts <- calcNormFactors(cnts, method = 'RLE')
-    cnts <- cpm(cnts, log = TRUE)
-    signal_mat <- assays(fit)[['mu']]
-    signal_mat <- DGEList(signal_mat)
-    signal_mat <- calcNormFactors(signal_mat, method = 'RLE')
-    signal_mat <- cpm(signal_mat, log = TRUE)
-    resid_mat <- cnts - signal_mat
     mean <- dds_res$log2FoldChange
     SD <- dds_res$lfcSE
     sd.alpha <- rep(1L, times = nrow(fit))
     dof <- rep((ncol(fit) - p), times = nrow(fit)) 
-    
   }   
   names(mean) <- names(SD) <- names(sd.alpha) <- names(dof) <- rownames(fit)
   overlap <- sapply(geneSets, function(g) sum(g %in% rownames(fit)))
   if (is.list(geneSets)) {
-    geneSets <- geneSets[overlap > 1]
+    geneSets <- geneSets[overlap > 1L]
   } else {
-    geneSets <- geneSets[overlap > 0]
+    geneSets <- geneSets[overlap > 0L]
   }
   
   # Run QuSAGE functions
@@ -263,7 +260,7 @@ qmod <- function(fit,
 
 }
 
-# Add arguments to tweak internal calls to limma::eBayes and/or DESeq::results functions?
+
 # Extend to ANOVA F-tests/likelihood ratio tests?
 
 
