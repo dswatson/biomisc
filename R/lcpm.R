@@ -11,8 +11,8 @@
 #' @details 
 #' \code{method = "TMM"} is the weighted trimmed mean of M-values (to the reference) 
 #' proposed by Robinson & Oshlack (2010), where the weights are from the delta method 
-#' on Binomial data. If refColumn is unspecified, the library whose upper quartile is 
-#' closest to the mean upper quartile is used.
+#' on Binomial data. If \code{refColumn} is unspecified, the library whose upper 
+#' quartile is closest to the mean upper quartile is used.
 #' 
 #' \code{method = "RLE"} is the scaling factor method proposed by Anders & Huber 
 #' (2010). We call it "relative log expression", as median library is calculated from 
