@@ -9,11 +9,12 @@
 #' @param dat An expression matrix or matrix-like object, with rows corresponding to
 #'   probes and columns to samples. Only necessary if \code{fit} is an \code{MArrayLM}
 #'   object.
-#' @param filt Number of libraries in which each probe must have at least one 
-#'   log2-count per million. Only relevant if \code{fit} is a \code{DESeqDataSet}, in 
-#'   which case the normality of transformed residuals at various values of 
-#'   \code{filter} should be checked prior to running \code{qmod}. See \code{\link{
-#'   check_resid}}.
+#' @param filt Numeric vector of length 2 specifying the filter criterion. Each 
+#'   probe must have at least \code{filt[1]} log2-counts per million in at least 
+#'   \code{filt[2]} libraries to pass the expression threshold. Only relevant if 
+#'   \code{fit} is a \code{DESeqDataSet}, in which case the normality of transformed 
+#'   residuals at various values of \code{filt} should be checked prior to running 
+#'   \code{qmod}, for example using \code{\link{check_resid}}. See Details.
 #' @param coef Column name or number specifying which coefficient of the model is of
 #'   interest. Alternatively, a vector of three or more such strings or numbers, in 
 #'   which case pathways are ranked by the \emph{F}-statistic for that set of 
@@ -22,10 +23,10 @@
 #'   names or numbers to be contrasted. The first and second elements will be the 
 #'   numerator and denominator, respectively, of the fold change calculation. 
 #'   Exactly one of \code{coef} or \code{contrast} must be \code{NULL}. 
-#' @param geneSets Either a named list of pathways to be compared, or a vector of
-#'   probe names representing a single gene set.
+#' @param geneSets A named list of one or several gene sets.
 #' @param n.points The number of points at which to sample the convoluted
 #'   \emph{t}-distribution. See Details.
+#' @param fdr 
 #'
 #' @details
 #' QuSAGE 
@@ -45,7 +46,7 @@
 #' 
 #' If fit is a voom object, make sure to run lcpm(dat).
 #' 
-#' By default \code{n.points} is set to 2^14, or 16,384 points, which will give very
+#' By default \code{n.points} is set to \code{2^14}, or 16,384 points, which will give very
 #' accurate \emph{p}-values in most cases. Sampling at more points will increase the
 #' accuracy of the resulting \emph{p}-values, but will also linearly increase the
 #' amount of time needed to calculate the result. With larger sample sizes, as few
@@ -53,7 +54,7 @@
 #' of the resulting \emph{p}-values. However, when there are a small number of samples
 #' (i.e., fewer than 8 samples total), the \emph{t}-distribution must be sampled over
 #' a much wider range, and the number of points needed for sampling should be
-#' increased accordingly. It is recommended that when running \code{qlim} with fewer
+#' increased accordingly. It is recommended that when running \code{qmod} with fewer
 #' than 8 samples, the number of points be increased to at least 2^15 or 2^16. It may
 #' also be useful to test higher values of this parameter, as it can often result in
 #' a much more significant \emph{p}-value with small sample sizes.
@@ -149,9 +150,6 @@ qmod <- function(fit,
     if (!identical(rownames(fit), rownames(dat))) {
       stop('dat and fit must have identical rownames.')
     }
-    if (is.null(rownames(fit)) && is.null(rownames(dat))) {
-      rownames(fit) <- rownames(dat) <- seq_len(nrow(fit))
-    } 
   } else if (is(fit, 'DESeqDataSet')) {
     coefs <- resultsNames(fit)
     p <- ncol(model.matrix(design(fit), colData(fit)))
@@ -195,6 +193,17 @@ qmod <- function(fit,
            '?contrasts.fit for more info.')
     }
   }
+  if (!is.list(geneSets)) {
+    stop('geneSets must be a list.')
+  }
+  if (is.null(names(geneSets))) {
+    stop('geneSets must be a named list.')
+  }
+  overlap <- sapply(geneSets, function(g) sum(g %in% rownames(fit)))
+  geneSets <- geneSets[overlap > 1L]
+  if (length(geneSets) == 0L) {
+    stop('No overlap detected between the genes in fit and those in geneSets.')
+  }
   
   # Prep data
   if (is(fit, 'MArrayLM')) {
@@ -215,10 +224,10 @@ qmod <- function(fit,
     sd.alpha[is.infinite(sd.alpha)] <- 1L
     dof <- fit$df.total
   } else {
-    cnts <- counts(fit, normalized = FALSE)
-    keep <- rowSums(cpm(cnts) > 1L) >= 1L
+    cnts <- counts(fit)
+    keep <- rowSums(cpm(cnts) >= filt[1]) >= filt[2]
     fit <- fit[keep, , drop = FALSE]
-    cnts <- lcpm(counts(fit, normalized = FALSE))
+    cnts <- lcpm(counts(fit))
     signal_mat <- lcpm(assays(fit)[['mu']])
     resid_mat <- cnts - signal_mat
     if (is.null(contrast)) {
@@ -233,35 +242,27 @@ qmod <- function(fit,
     dof <- rep((ncol(fit) - p), times = nrow(fit)) 
   }   
   names(mean) <- names(SD) <- names(sd.alpha) <- names(dof) <- rownames(fit)
-  overlap <- sapply(geneSets, function(g) sum(g %in% rownames(fit)))
-  if (is.list(geneSets)) {
-    geneSets <- geneSets[overlap > 1L]
-  } else {
-    geneSets <- geneSets[overlap > 0L]
-  }
   
   # Run QuSAGE functions
   res <- newQSarray(mean = mean,                       # Create QSarray obj
-                    SD = SD,
-                    sd.alpha = sd.alpha,
-                    dof = dof,
-                    labels = rep('resid', ncol(fit)))
+                      SD = SD,
+                sd.alpha = sd.alpha,
+                     dof = dof,
+                  labels = rep('resid', ncol(fit)))
   res <- aggregateGeneSet(res, geneSets, n.points)     # PDF per gene set
   res <- calcVIF(resid_mat, res, useCAMERA = FALSE)    # VIF on resid_mat
 
   # Export
-  out <- qsTable(res, number = Inf, sort.by = 'p') %>%
+  qsTable(res, number = Inf, sort.by = 'p') %>%
     rename(Pathway = pathway.name,
-           logFC = log.fold.change,
+             logFC = log.fold.change,
            p.value = p.Value) %>%
     mutate(q.value = qvalue(p.value)$qvalues) %>%
-    select(Pathway:p.value, q.value)
-  return(out)
+    select(Pathway:p.value, q.value) %>%
+    return()
 
 }
 
 
 # Extend to ANOVA F-tests/likelihood ratio tests?
-
-
 
