@@ -55,13 +55,13 @@ PAC <- function(cc,
                   plot = TRUE) {
 
   maxK <- length(cc)
-  idx <- seq(0, 1, 0.01)
-  CDFs <- matrix(nrow = 101, ncol = maxK - 1, dimnames = list(idx, 2L:maxK))
-  for (k in seq_len(maxK - 1)) {
+  idx <- seq(0L, 1L, 0.01)
+  CDFs <- matrix(nrow = 101L, ncol = maxK - 1L, dimnames = list(idx, 2L:maxK))
+  for (k in seq_len(maxK - 1L)) {
     CDFs[, k] <- ecdf(unlist(cc[[k + 1L]][['consensusMatrix']]))(idx) 
   }
   CDFs <- data_frame(k = as.factor(rep(2L:maxK, each = 101L)), 
-                   Idx = rep(idx, maxK - 1),
+                   Idx = rep(idx, maxK - 1L),
                    CDF = gather(tbl_df(CDFs), k, CDF)$CDF)
 
   PAC <- CDFs %>%
