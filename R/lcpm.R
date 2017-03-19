@@ -63,19 +63,20 @@
 #' plot_density(trans_mat)
 #'
 #' @export
-#' @importFrom edgeR DGEList calcNormFactors cpm
+#' @importFrom edgeR DGEList calcNormFactors
 #'
 
 lcpm <- function(mat, 
-                 method = 'RLE', 
-            prior.count = 0.5) {
+                 method = 'TMM') {
   
   # Transform
-  mat <- DGEList(mat)
-  mat <- calcNormFactors(mat, method = method)
-  mat <- cpm(mat, log = TRUE, prior.count = prior.count)
+  y <- DGEList(mat)
+  y <- calcNormFactors(y, method = method)
+  lib.size <- with(y$samples, lib.size * norm.factors)
+  y <- t(log2(t(y$counts + 0.5) / (lib.size + 1L) * 1e6L))
+  colnames(y) <- colnames(mat)
   
   # Export
-  return(mat)
+  return(y)
   
 }
