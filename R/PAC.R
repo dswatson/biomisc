@@ -76,7 +76,8 @@ PAC <- function(cc,
     p <- ggplot(PAC, aes(k, PAC, fill = k)) + 
       geom_bar(stat = 'identity') + 
       labs(title = 'PAC Statistics') + 
-      theme_bw() 
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5))
     print(p)
   }
 
