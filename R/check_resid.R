@@ -74,9 +74,8 @@ check_resid <- function(dds,
   cat(paste0('Filter criterion removes ', bad, ' (', bad_p, '%) of probes.'))
   
   # Plot
-  resid_df <- gather(tbl_df(resid_mat), 'Sample', 'Residual')
   data_frame(Expected = qnorm(ppoints(1e4L)),
-             Observed = quantile(resid_df$Residual, 
+             Observed = quantile(gather(tbl_df(resid_mat), Sample, Resid)$Resid, 
                                  probs = seq(0L, 1L, length.out = 1e4L))) %>%
     ggplot(aes(Expected, Observed)) + 
     geom_point(size = 0.5) + 
