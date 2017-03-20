@@ -233,8 +233,16 @@ qmod <- function(fit,
     cnts <- counts(fit)
     keep <- rowSums(cpm(cnts) >= filter[1]) >= filter[2]
     fit <- fit[keep, , drop = FALSE]
-    cnts <- lcpm(counts(fit), method = 'RLE')
-    signal_mat <- lcpm(assays(fit)[['mu']], method = 'RLE')
+    if (is.null(sizeFactors(fit))) {
+      nf <- normalizationFactors(fit) + 1L
+      cnts <- log2((counts(fit) + 0.5) / nf * 1e6L)
+      signal_mat <- log2((assays(fit)[['mu']] + 0.5) / nf * 1e6L)
+    } else {
+      cnts <- calcNormFactors(DGEList(counts(fit)), method = 'RLE')
+      nf <- with(cnts$samples, lib.sizes * norm.factors) + 1L
+      cnts <- t(log2(t(cnts$counts + 0.5) / nf * 1e6L))
+      signal_mat <- t(log2(t(assays(fit)[['mu']] + 0.5) / nf * 1e6L))
+    }
     resid_mat <- cnts - signal_mat
     if (is.null(contrast)) {
       dds_res <- results(fit, name = coef, independentFiltering = FALSE)
