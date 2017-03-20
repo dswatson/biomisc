@@ -78,7 +78,7 @@ PAC <- function(cc,
     as.data.frame()
   )
 
-  # Output
+  # Export
   if (plot) {
     p <- ggplot(PAC, aes(k, PAC, fill = k)) + 
       geom_bar(stat = 'identity') + 
