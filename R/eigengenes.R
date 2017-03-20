@@ -33,7 +33,18 @@
 #' \url{http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1000117}
 #'
 #' @examples
+#' # Simulate data
+#' mat <- matrix(rnorm(5000 * 10), nrow = 5000, ncol = 10)
+#' grp <- rep(c("A", "B"), each = 5)
+#' geneSets = list()
+#' for (i in 0:10) {
+#'   genes <- ((30 * i) + 1):(30 * (i + 1))
+#'   mat[genes, grp == "A"] <- mat[genes, grp == "A"] + rnorm(1)
+#'   geneSets[[paste("Set", i)]] <- genes
+#' }
 #' 
+#' # Create eigengene matrix
+#' eg_mat <- eigengenes(mat, geneSets)
 #'
 #' @export
 #' @importFrom limma getEAWP
