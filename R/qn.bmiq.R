@@ -1,6 +1,6 @@
 #' Preprocess DNA methylation data
 #'
-#' This function runs a QN.BMIQ pipeline on raw .idat files.
+#' This function runs a QN.BMIQ preprocessing pipeline on raw .idat files.
 #'
 #' @param targets A data frame of sample information or a vector of barcodes.
 #' @param idats Path to the directory containing the relevant .idat files.
@@ -10,12 +10,13 @@
 #' collectively form a complete preprocessing pipeline on raw DNA methylation data.
 #' It begins by filtering autosomal probes by detection \emph{p}-value, beadcount,
 #' alignment redundancy, and known SNPs using the default settings of
-#' \code{ChAMP::champ.load}. It then runs color bias adjustment, background correction,
-#' and quantile normalization, using functions from the \code{lumi} package. Finally,
-#' data are normalized using beta-mixture quantile dilation as implemented by
-#' \code{wateRmelon::BMIQ}. Missing values are imputed using \emph{k}-nearest
-#' neighbors with the default setting of \emph{k} = 10. Zeros are replaced with a very
-#' small value to facilitate logit transformation.
+#' \code{ChAMP::\link[ChAMP]{champ.load}}. It then runs color bias adjustment, 
+#' background correction, and quantile normalization, using functions from the 
+#' \code{\link[lumi]{lumi}} package. Finally, data are normalized using beta-mixture 
+#' quantile dilation as implemented by \code{wateRmelon::\link[wateRmelon]{BMIQ}}. 
+#' Missing values are imputed using \emph{k}-nearest neighbors with the default 
+#' setting of \emph{k} = 10. Zeros are replaced with a very small value to 
+#' facilitate logit transformation.
 #'
 #' Normalization procedures for methylation data are the subject of much active
 #' research. Over a dozen methods are implemented in various Bioconductor packages.
@@ -57,28 +58,34 @@
 #'
 #'
 #' @export
-#' @import lumi
-#' @import wateRmelon
-#' @import ChAMP
+#' @importFrom ChAMP champ.load
+#' @importFrom lumi importMethyIDAT lumiMethyC lumiMethyB lumiMethyN
+#' @importFrom wateRmelon BMIQ
 #' @import ChAMPdata
-#' @import impute
-#' @import dplyr
+#' @importFrom impute impute.knn
 #'
 
 qn.bmiq <- function(targets, idats) {
+  
+  # Preliminaries
+  if (!is.data.frame(targets)) {
+    stop('targets must be a data frame containing sample information.')
+  }
+  if (!all(file.exists(idats))) {
+    stop('At least one file in idats was not found. Check the paths')
+  }
 
   # Filter
   dat <- champ.load(idats)
   keep <- rownames(dat$beta)
-  targ <- read.csv(targets, stringsAsFactors = FALSE)
-  dat <- importMethyIDAT(targ, idats)
-  dat <- dat[keep, ]
+  dat <- importMethyIDAT(targets, idats)
+  dat <- dat[keep, , drop = FALSE]
 
   # QN
-  dat <- lumiMethyC(obj, method = 'quantile')    # Adjust for color bias
+  dat <- lumiMethyC(dat, method = 'quantile')    # Adjust for color bias
   dat <- lumiMethyB(dat, method = 'bgAdjust2C')  # Background correct
   dat <- lumiMethyN(dat, method = 'quantile')    # Quantile normalize
-  betas <- ilogit2(exprs(dat))
+  betas <- 2L^(exprs(dat)) / (1L + 2L^(exprs(dat)))
   rm(dat)
 
   # BMIQ
@@ -87,16 +94,15 @@ qn.bmiq <- function(targets, idats) {
     x[match(rownames(betas), probeInfoALL.lv[[5]])]
   })
   design.v <- as.numeric(probeInfo.lv[[2]])
-  mat <- matrix(nrow = nrow(betas), ncol = ncol(betas),
-                dimnames = list(rownames(betas), colnames(betas)))
-  for (j in seq_len(ncol(betas))) {            # BMIQ normalise
-    bmiq.o <- BMIQ(betas[, j], design.v, plots = FALSE,
-                   sampleID = colnames(betas)[j])
+  mat <- matrix(nrow = nrow(betas), ncol = ncol(betas), dimnames = dimnames(betas))
+  for (j in seq_len(ncol(betas))) {              # BMIQ normalize
+    bmiq.o <- BMIQ(betas[, j], design.v, plots = FALSE, sampleID = colnames(betas)[j])
     mat[, j] <- bmiq.o$nbeta
   }
   mat <- impute.knn(mat)$data                    # Impute missing values
-  mat[mat == 0] <- .0000001                      # Replace zeros
+  mat[mat == 0L] <- .0000001                     # Replace zeros
 
+  # Export
   return(mat)
 
 }
