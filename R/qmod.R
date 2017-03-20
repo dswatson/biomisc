@@ -96,9 +96,8 @@
 #' @examples
 #' # Fit limma model
 #' library(limma)
-#' eset <- matrix(rnorm(5000 * 10), nrow = 5000, ncol = 10)
-#' dimnames(eset) <- list(seq_len(nrow(eset)), 
-#'                        paste0('S', seq_len(ncol(eset))))
+#' eset <- matrix(rnorm(5000 * 10), nrow = 5000, ncol = 10,
+#'                dimnames = list(seq_len(5000), paste0('S', seq_len(10))))
 #' clin <- data.frame(treat = rep(c("ctl", "trt"), each = 5),
 #'                    batch = rep(c("b1", "b2"), times = 5),
 #'                       x1 = rnorm(10),
@@ -114,8 +113,8 @@
 #'   geneSets[[paste("Set", i)]] <- genes
 #' }
 #' 
-#' # Run qlim
-#' qlim(fit, eset, coef = 2, geneSets)
+#' # Run qmod
+#' top <- qmod(fit, eset, coef = 2, geneSets)
 #'
 #' @export
 #' @importFrom limma eBayes getEAWP 
@@ -149,6 +148,9 @@ qmod <- function(fit,
     if (!identical(rownames(fit), rownames(dat))) {
       stop('dat and fit must have identical rownames.')
     }
+    if (!is.null(filter)) {
+      warning('filter is ignored when fit is an MArrayLM object.')
+    }
   } else if (is(fit, 'DESeqDataSet')) {
     coefs <- resultsNames(fit)
     p <- ncol(model.matrix(design(fit), colData(fit)))
@@ -157,6 +159,11 @@ qmod <- function(fit,
     }
     if (!is.null(dat)) {
       warning('dat is ignored when fit is a DESeqDataSet.')
+    }
+    if (is.null(filter)) {
+      stop('filter must be supplied when fit is a DESeqDataSet. See ?check_resid.')
+    } else if (length(filter) != 2L) {
+      stop('filter must be a vector of length 2.')
     }
   } else {
     stop('fit must be an object of class MArrayLM or DESeqDataSet.')
@@ -224,10 +231,10 @@ qmod <- function(fit,
     dof <- fit$df.total
   } else {
     cnts <- counts(fit)
-    keep <- rowSums(cpm(cnts) >= filt[1]) >= filt[2]
+    keep <- rowSums(cpm(cnts) >= filter[1]) >= filter[2]
     fit <- fit[keep, , drop = FALSE]
-    cnts <- lcpm(counts(fit))
-    signal_mat <- lcpm(assays(fit)[['mu']])
+    cnts <- lcpm(counts(fit), method = 'RLE')
+    signal_mat <- lcpm(assays(fit)[['mu']], method = 'RLE')
     resid_mat <- cnts - signal_mat
     if (is.null(contrast)) {
       dds_res <- results(fit, name = coef, independentFiltering = FALSE)
