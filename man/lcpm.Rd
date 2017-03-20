@@ -4,10 +4,14 @@
 \alias{lcpm}
 \title{Transform Counts}
 \usage{
-lcpm(mat, method = "TMM")
+lcpm(mat, filter = NULL, method = "TMM")
 }
 \arguments{
 \item{mat}{Probe by sample matrix of raw counts.}
+
+\item{filter}{Optional vector of length 2 specifying the filter criterion. Each 
+probe must have at least \code{filter[1]} log2-counts per million in at least 
+\code{filter[2]} libraries to pass the expression threshold.}
 
 \item{method}{Normalization method to be used. See Details.}
 }
@@ -19,6 +23,20 @@ This convenient wrapper function converts raw counts to the log2-counts per mill
 scale, following normalization for library size and a minimal count shift.
 }
 \details{
+\code{lcpm} applies the \code{\link[limma]{voom}} transformation to sequencing 
+data, converting counts to approximately normal distributions on the log2-CPM 
+scale. Data can now be modelled using traditional linear techniques (at least 
+once spot weights have been applied; see Law, et al. (2014)), or used for 
+unsupervised clustering analysis via PCA, MDS, or other methods.  
+
+It is recommended that low count genes be filtered out prior to transformation.
+There is no general algorithm for determining the most appropriate expression 
+filter for a given data set. As a rule of thumb, the \code{limma} authors advise
+setting \code{filter[1]} to 10 / (\emph{L} / 1,000,000), where \emph{L} = the 
+minimum library size for a given count matrix; and setting \code{filter[2]} 
+to the number of replicates in the largest group. These are broad guidelines, 
+however, not strict rules. 
+
 \code{method = "TMM"} is the weighted trimmed mean of M-values (to the reference) 
 proposed by Robinson & Oshlack (2010), where the weights are from the delta method 
 on binomial data. 
@@ -56,6 +74,11 @@ plot_density(trans_mat)
 
 }
 \references{
+Law, C.W., Chen, Y., Shi, W., & Smyth, G.K. (2014). "voom: precision weights unlock
+linear model analysis tools for RNA-seq read counts." \emph{Genome Biology},
+\strong{15}:R29.
+\url{https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29}
+
 Anders, S. & Huber, W. (2010). "Differential expression analysis for sequence 
 count data." \emph{Genome Biology}, 11:R106.
 \url{https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-10-r106}
@@ -68,4 +91,7 @@ experiments." \emph{BMC Bioinformatics}, 11:94.
 Robinson, M.D. & Oshlack, A. (2010). "A scaling normalization method for 
 differential expression analysis of RNA-seq data." \emph{Genome Biology}, 11:R25.
 \url{https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25}
+}
+\seealso{
+\code{\link[limma]{voom}, \link[edgeR]{cpm}}
 }
