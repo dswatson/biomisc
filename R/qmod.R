@@ -9,11 +9,11 @@
 #' @param dat An expression matrix or matrix-like object, with rows corresponding to
 #'   probes and columns to samples. Only necessary if \code{fit} is an \code{MArrayLM}
 #'   object.
-#' @param filt Numeric vector of length 2 specifying the filter criterion. Each 
-#'   probe must have at least \code{filt[1]} log2-counts per million in at least 
-#'   \code{filt[2]} libraries to pass the expression threshold. Only relevant if 
+#' @param filter Numeric vector of length 2 specifying the filter criterion. Each 
+#'   probe must have at least \code{filter[1]} log2-counts per million in at least 
+#'   \code{filter[2]} libraries to pass the expression threshold. Only relevant if 
 #'   \code{fit} is a \code{DESeqDataSet}, in which case the normality of transformed 
-#'   residuals at various values of \code{filt} should be checked prior to running 
+#'   residuals at various values of \code{filter} should be checked prior to running 
 #'   \code{qmod}, for example using \code{\link{check_resid}}. See Details.
 #' @param coef Column name or number specifying which coefficient of the model is of
 #'   interest. Alternatively, a vector of three or more such strings or numbers, in 
@@ -26,7 +26,6 @@
 #' @param geneSets A named list of one or several gene sets.
 #' @param n.points The number of points at which to sample the convoluted
 #'   \emph{t}-distribution. See Details.
-#' @param fdr 
 #'
 #' @details
 #' QuSAGE 
@@ -65,8 +64,8 @@
 #'   \item{'logFC'} Average log2 fold change of genes in the pathway.
 #'   \item{'p.value'} The gene set \emph{p}-value, as calculated using
 #'     \code{pdf.pVal}.
-#'   \item{'q.value'} The false discovery rate, as estimated using Storey's
-#'     \emph{q}-value method.
+#'   \item{'FDR'} The false discovery rate, as estimated using the Benjamini-Hochberg
+#'     algorithm.
 #' }
 #'
 #' @references
@@ -86,12 +85,13 @@
 #' \url{http://www.statsci.org/smyth/pubs/ebayes.pdf}
 #' 
 #' Love, M., Huber, W., & Anders, S. (2014). "Moderated estimation of fold change and 
-#' dispersion for RNA-seq data with DESeq2." \emph{Genome Biology}, \emph{15}:550.
+#' dispersion for RNA-seq data with DESeq2." \emph{Genome Biology}, \strong{15}:550.
 #' \url{https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8}
 #'
-#' Storey, J. & Tibshirani, R. (2003). "Statistical significance for genomewide
-#' studies." \emph{Proc. Natl. Acad. Sci.}, \emph{100}(16): 9440–9445.
-#' \url{http://www.pnas.org/content/100/16/9440.full}
+#' Benjamini, Y., & Hochberg, Y. (1995). "Controlling the false discovery rate: a 
+#' practical and powerful approach to multiple testing." \emph{Journal of the Royal 
+#' Statistical Society, Series B}, \strong{57}:289–300.
+#' \url{}
 #'
 #' @examples
 #' # Fit limma model
@@ -122,13 +122,12 @@
 #' @importFrom DESeq2 counts results assays 
 #' @importFrom edgeR DGEList calcNormFactors cpm
 #' @import qusage
-#' @import qvalue
 #' @import dplyr
 #'
 
 qmod <- function(fit,
                  dat = NULL,
-                 filt = NULL,
+                 filter = NULL,
                  coef,
                  contrast = NULL,
                  geneSets,
@@ -257,8 +256,6 @@ qmod <- function(fit,
     rename(Pathway = pathway.name,
              logFC = log.fold.change,
            p.value = p.Value) %>%
-    mutate(q.value = qvalue(p.value)$qvalues) %>%
-    select(Pathway:p.value, q.value) %>%
     return()
 
 }
