@@ -1,3 +1,3 @@
 # biomisc
 
-Vignette TK.
+Don't ask too many questions.
