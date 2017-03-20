@@ -5,9 +5,9 @@
 #'
 #' @param dds A \code{DESeqDataSet} object that has been fit with a negative
 #'   binomial GLM.
-#' @param filt Numeric vector of length two specifying the filter criterion. Each 
-#'   probe must have at least \code{filt[1]} log2-counts per million in at least 
-#'   \code{filt[2]} libraries to pass the expression threshold.
+#' @param filter Numeric vector of length two specifying the filter criterion. Each 
+#'   probe must have at least \code{filter[1]} log2-counts per million in at least 
+#'   \code{filter[2]} libraries to pass the expression threshold.
 #'
 #' @details
 #' The statistical tests upon which \code{qmod} is based presume that residuals
@@ -21,11 +21,11 @@
 #' possible expression filter, although there is no precise algorithm for determining
 #' what this should be. 
 #' 
-#' As a general rule of thumb, the \code{limma} authors advise setting \code{filt[1]} 
+#' As a general rule of thumb, the \code{limma} authors advise setting \code{filter[1]} 
 #' to 10 / (\emph{L} / 1,000,000), where \emph{L} = the minimum library size for a 
-#' given count matrix. They also recommend setting \code{filt[2]} to the number of 
-#' replicates in the largest group. They note, however, that these are general 
-#' guidelines, not strict rules. 
+#' given count matrix; they also recommend setting \code{filter[2]} to the number of 
+#' replicates in the largest group. These are broad guidelines, however, not strict
+#' rules. 
 #'
 #' @examples
 #' library(DESeq2)
