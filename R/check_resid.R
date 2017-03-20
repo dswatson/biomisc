@@ -21,11 +21,10 @@
 #' possible expression filter, although there is no precise algorithm for determining
 #' what this should be. 
 #' 
-#' As a general rule of thumb, the \code{limma} authors advise setting \code{filter[1]} 
-#' to 10 / (\emph{L} / 1,000,000), where \emph{L} = the minimum library size for a 
-#' given count matrix; they also recommend setting \code{filter[2]} to the number of 
-#' replicates in the largest group. These are broad guidelines, however, not strict
-#' rules. 
+#' As a rule of thumb, the \code{limma} authors advise setting \code{filter[1]} to 10 
+#' / (\emph{L} / 1,000,000), where \emph{L} = the minimum library size for a given 
+#' count matrix; and setting \code{filter[2]} to the number of replicates in the 
+#' largest group. These are broad guidelines, however, not strict rules. 
 #'
 #' @examples
 #' library(DESeq2)
@@ -35,14 +34,14 @@
 #'
 #' @export
 #' @importFrom edgeR cpm
-#' @importFrom DESeq2 counts normalizationFactors sizeFactors  
+#' @importFrom DESeq2 counts normalizationFactors  
 #' @importFrom tidyr gather
 #' @import dplyr 
 #' @import ggplot2
 #'
 
 check_resid <- function(dds, 
-                        filt = c(1, 1)) {
+                        filter = c(1, 1)) {
   
   # Preliminaries
   if (!is(dds, 'DESeqDataSet')) {
@@ -51,22 +50,25 @@ check_resid <- function(dds,
   if (is.null(assays(dds)[['mu']])) {
     stop('dds must be fit with a negative binomial GLM.')
   }
+  if (length(filter) != 2L) {
+    stop('filter must be a vector of length 2.')
+  }
 
   # Create resid_mat
   p <- nrow(dds)
-  keep <- rowSums(cpm(counts(dds)) >= filt[1]) >= filt[2]
+  keep <- rowSums(cpm(counts(dds)) >= filter[1]) >= filter[2]
   dds <- dds[keep, , drop = FALSE]
-  cnts <- counts(dds)
   if (is.null(sizeFactors(dds))) {
-    cnts <- log2((cnts + 0.5) / (normalizationFactors(dds) + 1L) * 1e6L)
-    fit <- log2((assays(dds)[['mu']] + 0.5) / 
-                 (normalizationFactors(dds) + 1L) * 1e6L)
+    nf <- normalizationFactors(dds) + 1L
+    cnts <- log2((counts(dds) + 0.5) / nf * 1e6L)
+    signal_mat <- log2((assays(dds)[['mu']] + 0.5) / nf * 1e6L)
   } else {
-    cnts <- cpm(cnts, lib.size = sizeFactors(dds), log = TRUE, prior.count = 0.5)
-    fit <- cpm(assays(dds)[['mu']], lib.size = sizeFactors(dds), 
-               log = TRUE, prior.count = 0.5)
+    cnts <- calcNormFactors(DGEList(counts(dds)), method = 'RLE')
+    nf <- with(cnts$samples, lib.sizes * norm.factors) + 1L
+    cnts <- t(log2(t(cnts$counts + 0.5) / nf * 1e6L))
+    signal_mat <- t(log2(t(assays(dds)[['mu']] + 0.5) / nf * 1e6L))
   }
-  resid_mat <- cnts - fit
+  resid_mat <- cnts - signal_mat
 
   # Output
   bad <- p - sum(keep)
