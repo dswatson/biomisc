@@ -15,19 +15,20 @@ qn.bmiq(targets, idats)
 A matrix of filtered and normalized beta values.
 }
 \description{
-This function runs a QN.BMIQ pipeline on raw .idat files.
+This function runs a QN.BMIQ preprocessing pipeline on raw .idat files.
 }
 \details{
 \code{qn.bmiq} provides wrappers for functions from several packages that
 collectively form a complete preprocessing pipeline on raw DNA methylation data.
 It begins by filtering autosomal probes by detection \emph{p}-value, beadcount,
 alignment redundancy, and known SNPs using the default settings of
-\code{ChAMP::champ.load}. It then runs color bias adjustment, background correction,
-and quantile normalization, using functions from the \code{lumi} package. Finally,
-data are normalized using beta-mixture quantile dilation as implemented by
-\code{wateRmelon::BMIQ}. Missing values are imputed using \emph{k}-nearest
-neighbors with the default setting of \emph{k} = 10. Zeros are replaced with a very
-small value to facilitate logit transformation.
+\code{ChAMP::\link[ChAMP]{champ.load}}. It then runs color bias adjustment, 
+background correction, and quantile normalization, using functions from the 
+\code{\link[lumi]{lumi}} package. Finally, data are normalized using beta-mixture 
+quantile dilation as implemented by \code{wateRmelon::\link[wateRmelon]{BMIQ}}. 
+Missing values are imputed using \emph{k}-nearest neighbors with the default 
+setting of \emph{k} = 10. Zeros are replaced with a very small value to 
+facilitate logit transformation.
 
 Normalization procedures for methylation data are the subject of much active
 research. Over a dozen methods are implemented in various Bioconductor packages.
