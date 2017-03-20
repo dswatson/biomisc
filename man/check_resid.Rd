@@ -4,7 +4,7 @@
 \alias{check_resid}
 \title{Check the residuals of a DESeq model}
 \usage{
-check_resid(dds, filt = c(1, 1))
+check_resid(dds, filter = c(1, 1))
 }
 \arguments{
 \item{dds}{A \code{DESeqDataSet} object that has been fit with a negative
@@ -30,11 +30,10 @@ and apply a variance stabilizing transformation. We recommend applying the light
 possible expression filter, although there is no precise algorithm for determining
 what this should be. 
 
-As a general rule of thumb, the \code{limma} authors advise setting \code{filter[1]} 
-to 10 / (\emph{L} / 1,000,000), where \emph{L} = the minimum library size for a 
-given count matrix; they also recommend setting \code{filter[2]} to the number of 
-replicates in the largest group. These are broad guidelines, however, not strict
-rules.
+As a rule of thumb, the \code{limma} authors advise setting \code{filter[1]} to 10 
+/ (\emph{L} / 1,000,000), where \emph{L} = the minimum library size for a given 
+count matrix; and setting \code{filter[2]} to the number of replicates in the 
+largest group. These are broad guidelines, however, not strict rules.
 }
 \examples{
 library(DESeq2)
