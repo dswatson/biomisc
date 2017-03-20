@@ -1,18 +1,15 @@
 #' Transform Counts
 #'
 #' This convenient wrapper function converts raw counts to the log2-counts per million 
-#' scale, following normalization and a minimal count shift.
+#' scale, following normalization for library size and a minimal count shift.
 #' 
 #' @param mat Probe by sample matrix of raw counts.
 #' @param method Normalization method to be used. See Details.
-#' @param prior.count Average count to be added to each observation to avoid taking 
-#'   log of zero.
 #' 
 #' @details 
 #' \code{method = "TMM"} is the weighted trimmed mean of M-values (to the reference) 
 #' proposed by Robinson & Oshlack (2010), where the weights are from the delta method 
-#' on Binomial data. If \code{refColumn} is unspecified, the library whose upper 
-#' quartile is closest to the mean upper quartile is used.
+#' on binomial data. 
 #' 
 #' \code{method = "RLE"} is the scaling factor method proposed by Anders & Huber 
 #' (2010). We call it "relative log expression", as median library is calculated from 
@@ -22,8 +19,7 @@
 #' \code{method = "upperquartile"} is the upper-quartile normalization method of 
 #' Bullard, et al. (2010), in which the scale factors are calculated from the 75% 
 #' quantile of the counts for each library, after removing genes which are zero in all 
-#' libraries. This idea is generalized here to allow scaling by any quantile of the 
-#' distributions.
+#' libraries. 
 #' 
 #' If \code{method = "none"}, then the normalization factors are set to 1.
 #' 
