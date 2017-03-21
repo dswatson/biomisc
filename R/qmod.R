@@ -214,6 +214,7 @@ qmod <- function(fit,
   # Prep data
   if (is(fit, 'MArrayLM')) {
     dat <- getEAWP(dat)$exprs
+    n <- ncol(dat)
     if (is.null(coef)) {
       coef <- 'Contrast'
       suppressWarnings(
@@ -231,6 +232,7 @@ qmod <- function(fit,
     dof <- fit$df.total
   } else {
     cnts <- counts(fit)
+    n <- ncol(cnts)
     keep <- rowSums(cpm(cnts) >= filter[1]) >= filter[2]
     fit <- fit[keep, , drop = FALSE]
     if (is.null(sizeFactors(fit))) {
@@ -262,7 +264,7 @@ qmod <- function(fit,
                       SD = SD,
                 sd.alpha = sd.alpha,
                      dof = dof,
-                  labels = rep('resid', ncol(fit)))
+                  labels = rep('resid', n))
   res <- aggregateGeneSet(res, geneSets, n.points)     # PDF per gene set
   res <- calcVIF(resid_mat, res, useCAMERA = FALSE)    # VIF on resid_mat
 
