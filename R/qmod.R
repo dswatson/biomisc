@@ -215,16 +215,16 @@ qmod <- function(fit,
   if (is(fit, 'MArrayLM')) {
     dat <- getEAWP(dat)$exprs
     n <- ncol(dat)
+    resid_mat <- residuals(fit, dat)
     if (is.null(coef)) {
       coef <- 'Contrast'
       suppressWarnings(
-        cm <- makeContrasts(coef = paste(contrast[2], '-', contrast[1]), 
+        cm <- makeContrasts(coef = paste(contrast[1], '-', contrast[2]), 
                             levels = coefs)
       )
       fit <- contrasts.fit(fit, cm)
       fit <- eBayes(fit)
     } 
-    resid_mat <- residuals(fit, dat)
     mean <- fit$coefficients[, coef] 
     SD <- sqrt(fit$s2.post) * fit$stdev.unscaled[, coef]
     sd.alpha <- SD / (fit$sigma * fit$stdev.unscaled[, coef])
@@ -260,11 +260,8 @@ qmod <- function(fit,
   names(mean) <- names(SD) <- names(sd.alpha) <- names(dof) <- rownames(fit)
   
   # Run QuSAGE functions
-  res <- newQSarray(mean = mean,                       # Create QSarray obj
-                      SD = SD,
-                sd.alpha = sd.alpha,
-                     dof = dof,
-                  labels = rep('resid', n))
+  res <- newQSarray(mean = mean, SD = SD, sd.alpha = sd.alpha, dof = dof,
+                    labels = rep('resid', n))          # Create QSarray obj
   res <- aggregateGeneSet(res, geneSets, n.points)     # PDF per gene set
   res <- calcVIF(resid_mat, res, useCAMERA = FALSE)    # VIF on resid_mat
 
