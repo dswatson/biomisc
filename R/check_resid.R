@@ -78,7 +78,7 @@ check_resid <- function(dds,
   # Plot
   data_frame(Expected = qnorm(ppoints(1e4L)),
              Observed = quantile(gather(tbl_df(resid_mat), Sample, Resid)$Resid, 
-                                 probs = seq(0L, 1L, length.out = 1e4L))) %>%
+                                 probs = ppoints(1e4L))) %>%
     ggplot(aes(Expected, Observed)) + 
     geom_point(size = 0.5) + 
     labs(main = 'Normal Q-Q Plot',
