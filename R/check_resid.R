@@ -6,7 +6,7 @@
 #' @param dds A \code{DESeqDataSet} object that has been fit with a negative
 #'   binomial GLM.
 #' @param filter Numeric vector of length two specifying the filter criterion. Each 
-#'   probe must have at least \code{filter[1]} log2-counts per million in at least 
+#'   probe must have more than \code{filter[1]} log2-counts per million in at least 
 #'   \code{filter[2]} libraries to pass the expression threshold.
 #'
 #' @details
@@ -21,10 +21,13 @@
 #' possible expression filter, although there is no precise algorithm for determining
 #' what this should be. 
 #' 
-#' As a rule of thumb, the \code{limma} authors advise setting \code{filter[1]} to 10 
-#' / (\emph{L} / 1,000,000), where \emph{L} = the minimum library size for a given 
-#' count matrix; and setting \code{filter[2]} to the number of replicates in the 
-#' largest group. These are broad guidelines, however, not strict rules. 
+#' As a rule of thumb, the \code{limma} authors advise setting \code{filter[1]} to 
+#' either 1, or 10 / (\emph{L} / 1,000,000), where \emph{L} = the minimum library size 
+#' for a given count matrix. The former corresponds to a log2-CPM of 0, while the 
+#' latter may be preferable in cases where read depth is especially shallow. For 
+#' \code{filter[2]}, the authors recommend using the number of replicates in the 
+#' largest group, to guarantee that a gene is expresed in at least one sample for 
+#' any groupwise comparison. These are broad guidelines, however, not strict rules. 
 #'
 #' @examples
 #' library(DESeq2)
@@ -56,7 +59,7 @@ check_resid <- function(dds,
 
   # Create resid_mat
   p <- nrow(dds)
-  keep <- rowSums(cpm(counts(dds)) >= filter[1]) >= filter[2]
+  keep <- rowSums(cpm(counts(dds)) > filter[1]) >= filter[2]
   dds <- dds[keep, , drop = FALSE]
   if (is.null(sizeFactors(dds))) {
     nf <- normalizationFactors(dds) + 1L
@@ -81,10 +84,11 @@ check_resid <- function(dds,
                                  probs = ppoints(1e4L))) %>%
     ggplot(aes(Expected, Observed)) + 
     geom_point(size = 0.5) + 
-    labs(main = 'Normal Q-Q Plot',
+    labs(title = 'Normal Q-Q Plot',
          x = 'Expected Quantiles',
          y = 'Observed Quantiles') + 
-    theme_bw()
+    theme_bw() + 
+    theme(plot.title = element_text(hjust = 0.5))
   
 }
 
