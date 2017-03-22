@@ -32,9 +32,12 @@ unsupervised clustering analysis via PCA, MDS, or other methods.
 It is recommended that low count genes be filtered out prior to transformation.
 There is no general algorithm for determining the most appropriate expression 
 filter for a given data set. As a rule of thumb, the \code{limma} authors advise
-setting \code{filter[1]} to 10 / (\emph{L} / 1,000,000), where \emph{L} = the 
-minimum library size for a given count matrix; and setting \code{filter[2]} 
-to the number of replicates in the largest group. These are broad guidelines, 
+setting \code{filter[1]} to either 1, or 10 / (\emph{L} / 1,000,000), where 
+\emph{L} = the minimum library size for a given count matrix. The former 
+corresponds to a log2-CPM of 0, while the latter may be preferable in cases where
+read depth is especially shallow. For \code{filter[2]}, the authors recommend using
+the number of replicates in the largest group, to guarantee that a gene is expresed
+in at least one sample for any groupwise comparison. These are broad guidelines, 
 however, not strict rules. 
 
 \code{method = "TMM"} is the weighted trimmed mean of M-values (to the reference) 
