@@ -73,8 +73,7 @@ PAC <- function(cc,
              k = as.factor(k)) %>%
     group_by(k) %>%
     mutate(PAC = diff(CDF)) %>%
-    select(k, PAC) %>%
-    unique() %>%
+    distinct(k, PAC) %>%
     as.data.frame()
   )
 
