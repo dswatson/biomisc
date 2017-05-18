@@ -133,7 +133,7 @@ qmod <- function(fit,
                  contrast = NULL,
                  geneSets,
                  n.points = 2^14) {
-
+  
   # Preliminaries
   if (nrow(fit) < 3L) {
     stop('fit must have at least three probes.')
@@ -144,7 +144,7 @@ qmod <- function(fit,
     if (is.null(dat)) {
       stop('dat must be provided when fit is an MArrayLM object.')
     }
-    if (nrow(fit) != nrow(dat) || nrow(fit$design) != ncol(dat)) {
+    if (nrow(fit) != nrow(dat) | nrow(fit$design) != ncol(dat)) {
       stop('dat is not conformal with fit.')
     }
     if (!identical(rownames(fit), rownames(dat))) {
@@ -172,32 +172,32 @@ qmod <- function(fit,
     stop('fit must be an object of class MArrayLM or DESeqDataSet.')
   }
   if (is.null(contrast)) {
-    if (is.character(coef) && !coef %in% coefs) {
+    if (is.character(coef) & !coef %in% coefs) {
       stop(paste0("'", coef, "' not found in fit's design matrix."))
     } 
-    if (is.numeric(coef) && !coef %in% seq_len(p)) {
+    if (is.numeric(coef) & !coef %in% seq_len(p)) {
       stop(paste("No coef number", coef, "found in fit's design matrix."))
     }
   } else if (is.null(coef)) {
     if (length(contrast) != 2L) {
       stop('contrast must be a vector of length 2.')
     }
-    if ((is.character(contrast) && any(!contrast %in% coef)) ||
-        (is.numeric(contrast) && any(!contrast %in% seq_len(p)))) {
+    if ((is.character(contrast) & any(!contrast %in% coef)) ||
+        (is.numeric(contrast) & any(!contrast %in% seq_len(p)))) {
       stop("Both coefficients passed to contrast must be in fit's design ', 
            'matrix.")
     }
-  } else {
-    stop('Exactly one of coef or contrast must be NULL.')
+    } else {
+      stop('Exactly one of coef or contrast must be NULL.')
   }
   if (is(fit, 'MArrayLM')) {
-    if (is.null(fit$t) && is.null(fit$F) && is.null(contrast)) {
+    if (is.null(fit$t) & is.null(fit$F) & is.null(contrast)) {
       fit <- eBayes(fit)
       warning('Standard errors for fit have not been moderated. Running ', 
               'eBayes before testing for enrichment. See ?eBayes for more ', 
               'info.')
     }
-    if (!is.null(fit$t) && !is.null(fit$F) && is.null(coef)) {
+    if (!is.null(fit$t) & !is.null(fit$F) & is.null(coef)) {
       stop('Standard errors for fit must not be moderated when passing a ', 
            'contrast to qmod. Use an lmFit output instead. The function will ', 
            'internally create the appropriate contrast matrix and run eBayes ', 
@@ -240,15 +240,13 @@ qmod <- function(fit,
     n <- ncol(cnts)
     keep <- rowSums(cpm(cnts) > filter[1]) >= filter[2]
     fit <- fit[keep, , drop = FALSE]
+    cnts <- cpm(counts(fit, normalized = TRUE), log = TRUE, prior.count = 1L)
     if (is.null(sizeFactors(fit))) {
-      cnts <- cpm(counts(fit, normalized = TRUE), log = TRUE, prior.count = 1L)
-      signal_mat <- log2((assays(fit)[['mu']] + 1L) / 
-                           (normalizationFactors(fit) * 1e6L))
+      signal_mat <- assays(fit)[['mu']] / normalizationFactors(fit)
     } else {
-      cnts <- cpm(counts(fit, normalized = TRUE), log = TRUE, prior.count = 1L)
-      signal_mat <- t(log2(t(assays(fit)[['mu']] + 1L) / 
-                             sizeFactors(fit) * 1e6L))
+      signal_mat <- t(t(assays(fit)[['mu']]) / sizeFactors(fit))
     }
+    signal_mat <- cpm(signal_mat, log = TRUE, prior.count = 1L)
     resid_mat <- cnts - signal_mat
     if (is.null(contrast)) {
       dds_res <- results(fit, name = coef, independentFiltering = FALSE)
@@ -268,14 +266,14 @@ qmod <- function(fit,
                     labels = rep('resid', n))          # Create QSarray obj
   res <- aggregateGeneSet(res, geneSets, n.points)     # PDF per gene set
   res <- calcVIF(resid_mat, res, useCAMERA = FALSE)    # VIF on resid_mat
-
+  
   # Export
   qsTable(res, number = Inf, sort.by = 'p') %>%
     rename(Pathway = pathway.name,
              logFC = log.fold.change,
            p.value = p.Value) %>%
     return()
-
+  
 }
 
 
