@@ -3,26 +3,29 @@
 #' This function is a wrapper for the QuSAGE algorithm, which tests for pathway 
 #' enrichment, designed for easy integration with limma and DESeq2.
 #'
-#' @param fit An object of class \code{limma::\link[limma]{MArrayLM}}, as created by 
-#'   a call to \code{\link[limma]{eBayes}}, or a \code{\link[DESeq2]{DESeqDataSet}} 
-#'   that has been fit with a negative binomial GLM. See Details.
-#' @param dat An expression matrix or matrix-like object, with rows corresponding to
-#'   probes and columns to samples. Only necessary if \code{fit} is an \code{MArrayLM}
-#'   object.
-#' @param filter Numeric vector of length 2 specifying the filter criterion. Each 
-#'   probe must have at least \code{filter[1]} log2-counts per million in at least 
-#'   \code{filter[2]} libraries to pass the expression threshold. Only relevant if 
-#'   \code{fit} is a \code{DESeqDataSet}, in which case the normality of transformed 
-#'   residuals at various values of \code{filter} should be checked prior to running 
-#'   \code{qmod}, for example using \code{\link{check_resid}}. See Details.
-#' @param coef Column name or number specifying which coefficient of the model is of
-#'   interest. Alternatively, a vector of three or more such strings or numbers, in 
-#'   which case pathways are ranked by the \emph{F}-statistic for that set of 
-#'   coefficients.
-#' @param contrast Character or numeric vector of length two, specifying the column
-#'   names or numbers to be contrasted. The first and second elements will be the 
-#'   numerator and denominator, respectively, of the fold change calculation. 
-#'   Exactly one of \code{coef} or \code{contrast} must be \code{NULL}. 
+#' @param fit An object of class \code{limma::\link[limma]{MArrayLM}}, as 
+#'   created by a call to \code{\link[limma]{eBayes}}, or a \code{
+#'   \link[DESeq2]{DESeqDataSet}} that has been fit with a negative binomial 
+#'   GLM. See Details.
+#' @param dat An expression matrix or matrix-like object, with rows 
+#'   corresponding to probes and columns to samples. Only necessary if \code{
+#'   fit} is an \code{MArrayLM} object.
+#' @param filter Numeric vector of length 2 specifying the filter criterion. 
+#'   Each probe must have at least \code{filter[1]} log2-counts per million in 
+#'   at least \code{filter[2]} libraries to pass the expression threshold. Only 
+#'   relevant if \code{fit} is a \code{DESeqDataSet}, in which case the 
+#'   normality of transformed residuals at various values of \code{filter} 
+#'   should be checked prior to running \code{qmod}, for example using \code{
+#'   \link{check_resid}}. See Details.
+#' @param coef Column name or number specifying which coefficient of the model 
+#'   is of interest. Alternatively, a vector of three or more such strings or 
+#'   numbers, in which case pathways are ranked by the \emph{F}-statistic for 
+#'   that set of coefficients.
+#' @param contrast Character or numeric vector of length two, specifying the 
+#'   column names or numbers to be contrasted. The first and second elements 
+#'   will be the numerator and denominator, respectively, of the fold change 
+#'   calculation. Exactly one of \code{coef} or \code{contrast} must be \code{
+#'   NULL}. 
 #' @param geneSets A named list of one or several gene sets.
 #' @param n.points The number of points at which to sample the convoluted
 #'   \emph{t}-distribution. See Details.
@@ -69,29 +72,27 @@
 #' }
 #'
 #' @references
-#' Yaari, G. Bolen, C.R., Thakar, J. & Kleinstein, S.H. (2013). "Quantitative set
-#' analysis for gene expression: a method to quantify gene set differential expression
-#' including gene-gene correlations." \emph{Nucleic Acids Res.}, \emph{41}(18): e170.
-#' \url{https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3794608/}
+#' Yaari, G. Bolen, C.R., Thakar, J. & Kleinstein, S.H. (2013). 
+#' \href{https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3794608/}{Quantitative set
+#' analysis for gene expression: a method to quantify gene set differential 
+#' expression including gene-gene correlations}. \emph{Nucleic Acids Res.}, 
+#' \emph{41}(18): e170.
 #'
-#' Turner, J.A., Bolen, C.R. & Blankenship, D.M. (2015). "Quantitative gene set analysis
-#' generalized for repeated measures, confounder adjustment, and continuous covariates."
-#' \emph{BMC Bioinformatics}, \emph{16}(1): 272.
-#' \url{http://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0707-9}
+#' Turner, J.A., Bolen, C.R. & Blankenship, D.M. (2015). 
+#' \href{http://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0707-9}{
+#' Quantitative gene set analysis generalized for repeated measures, confounder 
+#' adjustment, and continuous covariates}. \emph{BMC Bioinformatics}, \emph{
+#' 16}(1): 272.
 #' 
-#' Smyth, G.K. (2004). "Linear models and empirical Bayes methods for assessing
-#' differential expression in microarray experiments." \emph{Stat. Appl. Genet. 
-#' Molec. Biol.}, \emph{3}(1).
-#' \url{http://www.statsci.org/smyth/pubs/ebayes.pdf}
+#' Smyth, G.K. (2004). 
+#' \href{http://www.statsci.org/smyth/pubs/ebayes.pdf}{Linear models and 
+#' empirical Bayes methods for assessing differential expression in microarray 
+#' experiments}. \emph{Stat. Appl. Genet. Molec. Biol.}, \emph{3}(1).
 #' 
-#' Love, M., Huber, W., & Anders, S. (2014). "Moderated estimation of fold change and 
-#' dispersion for RNA-seq data with DESeq2." \emph{Genome Biology}, \strong{15}:550.
-#' \url{https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8}
-#'
-#' Benjamini, Y., & Hochberg, Y. (1995). "Controlling the false discovery rate: a 
-#' practical and powerful approach to multiple testing." \emph{Journal of the Royal 
-#' Statistical Society, Series B}, \strong{57}:289–300.
-#' \url{}
+#' Love, M., Huber, W., & Anders, S. (2014). 
+#' \href{https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8}{
+#' Moderated estimation of fold change and dispersion for RNA-seq data with
+#' DESeq2}. \emph{Genome Biology}, \strong{15}:550.
 #'
 #' @examples
 #' # Fit limma model
@@ -118,7 +119,8 @@
 #'
 #' @export
 #' @importFrom limma eBayes getEAWP 
-#' @importFrom DESeq2 counts results assays 
+#' @importFrom DESeq2 sizeFactors normalizationFactors counts results 
+#' @importFrom SummarizedExperiment assays 
 #' @importFrom edgeR DGEList calcNormFactors cpm
 #' @import qusage
 #' @import dplyr
@@ -161,7 +163,8 @@ qmod <- function(fit,
       warning('dat is ignored when fit is a DESeqDataSet.')
     }
     if (is.null(filter)) {
-      stop('filter must be supplied when fit is a DESeqDataSet. See ?check_resid.')
+      stop('filter must be supplied when fit is a DESeqDataSet. See ', 
+           '?check_resid.')
     } else if (length(filter) != 2L) {
       stop('filter must be a vector of length 2.')
     }
@@ -181,7 +184,8 @@ qmod <- function(fit,
     }
     if ((is.character(contrast) && any(!contrast %in% coef)) ||
         (is.numeric(contrast) && any(!contrast %in% seq_len(p)))) {
-      stop("Both coefficients passed to contrast must be in fit's design matrix.")
+      stop("Both coefficients passed to contrast must be in fit's design ', 
+           'matrix.")
     }
   } else {
     stop('Exactly one of coef or contrast must be NULL.')
@@ -189,14 +193,15 @@ qmod <- function(fit,
   if (is(fit, 'MArrayLM')) {
     if (is.null(fit$t) && is.null(fit$F) && is.null(contrast)) {
       fit <- eBayes(fit)
-      warning('Standard errors for fit have not been moderated. Running eBayes before ',
-              'testing for enrichment. See ?eBayes for more info.')
+      warning('Standard errors for fit have not been moderated. Running ', 
+              'eBayes before testing for enrichment. See ?eBayes for more ', 
+              'info.')
     }
     if (!is.null(fit$t) && !is.null(fit$F) && is.null(coef)) {
-      stop('Standard errors for fit must not be moderated when passing a contrast ',
-           'to qmod. Use an lmFit output instead. The function will internally ',
-           'create the appropriate contrast matrix and run eBayes on that. See ',
-           '?contrasts.fit for more info.')
+      stop('Standard errors for fit must not be moderated when passing a ', 
+           'contrast to qmod. Use an lmFit output instead. The function will ', 
+           'internally create the appropriate contrast matrix and run eBayes ', 
+           'on that. See ?contrasts.fit for more info.')
     }
   }
   if (!is.list(geneSets)) {
@@ -233,17 +238,16 @@ qmod <- function(fit,
   } else {
     cnts <- counts(fit)
     n <- ncol(cnts)
-    keep <- rowSums(cpm(cnts) >= filter[1]) >= filter[2]
+    keep <- rowSums(cpm(cnts) > filter[1]) >= filter[2]
     fit <- fit[keep, , drop = FALSE]
     if (is.null(sizeFactors(fit))) {
-      nf <- normalizationFactors(fit) + 1L
-      cnts <- log2((counts(fit) + 0.5) / nf * 1e6L)
-      signal_mat <- log2((assays(fit)[['mu']] + 0.5) / nf * 1e6L)
+      cnts <- cpm(counts(fit, normalized = TRUE), log = TRUE, prior.count = 1L)
+      signal_mat <- log2((assays(fit)[['mu']] + 1L) / 
+                           (normalizationFactors(fit) * 1e6L))
     } else {
-      cnts <- calcNormFactors(DGEList(counts(fit)), method = 'RLE')
-      nf <- with(cnts$samples, lib.sizes * norm.factors) + 1L
-      cnts <- t(log2(t(cnts$counts + 0.5) / nf * 1e6L))
-      signal_mat <- t(log2(t(assays(fit)[['mu']] + 0.5) / nf * 1e6L))
+      cnts <- cpm(counts(fit, normalized = TRUE), log = TRUE, prior.count = 1L)
+      signal_mat <- t(log2(t(assays(fit)[['mu']] + 1L) / 
+                             sizeFactors(fit) * 1e6L))
     }
     resid_mat <- cnts - signal_mat
     if (is.null(contrast)) {
