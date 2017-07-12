@@ -1,53 +1,53 @@
 #' Run QuSAGE on limma or DESeq2 model objects
 #'
-#' This function is a wrapper for the QuSAGE algorithm, which tests for pathway 
+#' This function is a wrapper for the QuSAGE algorithm, which tests for pathway
 #' enrichment, designed for easy integration with limma and DESeq2.
 #'
-#' @param fit An object of class \code{limma::\link[limma]{MArrayLM}}, as 
+#' @param fit An object of class \code{limma::\link[limma]{MArrayLM}}, as
 #'   created by a call to \code{\link[limma]{eBayes}}, or a \code{
-#'   \link[DESeq2]{DESeqDataSet}} that has been fit with a negative binomial 
+#'   \link[DESeq2]{DESeqDataSet}} that has been fit with a negative binomial
 #'   GLM. See Details.
-#' @param dat An expression matrix or matrix-like object, with rows 
+#' @param dat An expression matrix or matrix-like object, with rows
 #'   corresponding to probes and columns to samples. Only necessary if \code{
 #'   fit} is an \code{MArrayLM} object.
-#' @param filter Numeric vector of length 2 specifying the filter criterion. 
-#'   Each probe must have at least \code{filter[1]} log2-counts per million in 
-#'   at least \code{filter[2]} libraries to pass the expression threshold. Only 
-#'   relevant if \code{fit} is a \code{DESeqDataSet}, in which case the 
-#'   normality of transformed residuals at various values of \code{filter} 
+#' @param filter Numeric vector of length 2 specifying the filter criterion.
+#'   Each probe must have at least \code{filter[1]} log2-counts per million in
+#'   at least \code{filter[2]} libraries to pass the expression threshold. Only
+#'   relevant if \code{fit} is a \code{DESeqDataSet}, in which case the
+#'   normality of transformed residuals at various values of \code{filter}
 #'   should be checked prior to running \code{qmod}, for example using \code{
 #'   \link{check_resid}}. See Details.
-#' @param coef Column name or number specifying which coefficient of the model 
-#'   is of interest. Alternatively, a vector of three or more such strings or 
-#'   numbers, in which case pathways are ranked by the \emph{F}-statistic for 
+#' @param coef Column name or number specifying which coefficient of the model
+#'   is of interest. Alternatively, a vector of three or more such strings or
+#'   numbers, in which case pathways are ranked by the \emph{F}-statistic for
 #'   that set of coefficients.
-#' @param contrast Character or numeric vector of length two, specifying the 
-#'   column names or numbers to be contrasted. The first and second elements 
-#'   will be the numerator and denominator, respectively, of the fold change 
+#' @param contrast Character or numeric vector of length two, specifying the
+#'   column names or numbers to be contrasted. The first and second elements
+#'   will be the numerator and denominator, respectively, of the fold change
 #'   calculation. Exactly one of \code{coef} or \code{contrast} must be \code{
-#'   NULL}. 
+#'   NULL}.
 #' @param geneSets A named list of one or several gene sets.
 #' @param n.points The number of points at which to sample the convoluted
 #'   \emph{t}-distribution. See Details.
 #'
 #' @details
-#' QuSAGE 
-#' 
+#' QuSAGE
+#'
 #' ### INTRO TO QMOD? ###
-#' \code{qmod} combines the  
-#' 
-#' 
-#' the statistical flexibility and empirical Bayes methods of 
-#' \code{limma} with the specificity and sensitivity of the QuSAGE algorithm for 
-#' detecting pathway enrichment. Simulations have shown that this pipeline 
-#' outperforms each package's independent methods for gene set analysis in 
-#' complex experimental designs, namely \code{\link[limma]{camera}} and 
+#' \code{qmod} combines the
+#'
+#'
+#' the statistical flexibility and empirical Bayes methods of
+#' \code{limma} with the specificity and sensitivity of the QuSAGE algorithm for
+#' detecting pathway enrichment. Simulations have shown that this pipeline
+#' outperforms each package's independent methods for gene set analysis in
+#' complex experimental designs, namely \code{\link[limma]{camera}} and
 #' \code{link[qusage]{qgen}}. See Watson & John, forthcoming.
-#' 
+#'
 #' ### SOMETHING ON MArrayLM vs. DESeqDataSet OBJECTS ###
-#' 
+#'
 #' If fit is a voom object, make sure to run lcpm(dat).
-#' 
+#'
 #' By default \code{n.points} is set to \code{2^14}, or 16,384 points, which will give very
 #' accurate \emph{p}-values in most cases. Sampling at more points will increase the
 #' accuracy of the resulting \emph{p}-values, but will also linearly increase the
@@ -72,24 +72,24 @@
 #' }
 #'
 #' @references
-#' Yaari, G. Bolen, C.R., Thakar, J. & Kleinstein, S.H. (2013). 
+#' Yaari, G. Bolen, C.R., Thakar, J. & Kleinstein, S.H. (2013).
 #' \href{https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3794608/}{Quantitative set
-#' analysis for gene expression: a method to quantify gene set differential 
-#' expression including gene-gene correlations}. \emph{Nucleic Acids Res.}, 
+#' analysis for gene expression: a method to quantify gene set differential
+#' expression including gene-gene correlations}. \emph{Nucleic Acids Res.},
 #' \emph{41}(18): e170.
 #'
-#' Turner, J.A., Bolen, C.R. & Blankenship, D.M. (2015). 
+#' Turner, J.A., Bolen, C.R. & Blankenship, D.M. (2015).
 #' \href{http://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0707-9}{
-#' Quantitative gene set analysis generalized for repeated measures, confounder 
+#' Quantitative gene set analysis generalized for repeated measures, confounder
 #' adjustment, and continuous covariates}. \emph{BMC Bioinformatics}, \emph{
 #' 16}(1): 272.
-#' 
-#' Smyth, G.K. (2004). 
-#' \href{http://www.statsci.org/smyth/pubs/ebayes.pdf}{Linear models and 
-#' empirical Bayes methods for assessing differential expression in microarray 
+#'
+#' Smyth, G.K. (2004).
+#' \href{http://www.statsci.org/smyth/pubs/ebayes.pdf}{Linear models and
+#' empirical Bayes methods for assessing differential expression in microarray
 #' experiments}. \emph{Stat. Appl. Genet. Molec. Biol.}, \emph{3}(1).
-#' 
-#' Love, M., Huber, W., & Anders, S. (2014). 
+#'
+#' Love, M., Huber, W., & Anders, S. (2014).
 #' \href{https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8}{
 #' Moderated estimation of fold change and dispersion for RNA-seq data with
 #' DESeq2}. \emph{Genome Biology}, \strong{15}:550.
@@ -105,7 +105,7 @@
 #'                       x2 = runif(10))
 #' des <- model.matrix(~ treat + batch + x1 + x2, data = clin)
 #' fit <- eBayes(lmFit(eset, des))
-#' 
+#'
 #' # Create list of differentially expressed pathways
 #' geneSets = list()
 #' for (i in 0:10) {
@@ -113,14 +113,14 @@
 #'   eset[genes, clin$treat == "trt"] <- eset[genes, clin$treat == "trt"] + rnorm(1)
 #'   geneSets[[paste("Set", i)]] <- genes
 #' }
-#' 
+#'
 #' # Run qmod
 #' top <- qmod(fit, eset, coef = 2, geneSets)
 #'
 #' @export
-#' @importFrom limma eBayes getEAWP 
-#' @importFrom DESeq2 sizeFactors normalizationFactors counts results 
-#' @importFrom SummarizedExperiment assays 
+#' @importFrom limma eBayes getEAWP
+#' @importFrom DESeq2 sizeFactors normalizationFactors counts results
+#' @importFrom SummarizedExperiment assays
 #' @importFrom edgeR DGEList calcNormFactors cpm
 #' @import qusage
 #' @import dplyr
@@ -133,7 +133,7 @@ qmod <- function(fit,
                  contrast = NULL,
                  geneSets,
                  n.points = 2^14) {
-  
+
   # Preliminaries
   if (nrow(fit) < 3L) {
     stop('fit must have at least three probes.')
@@ -144,26 +144,26 @@ qmod <- function(fit,
     if (is.null(dat)) {
       stop('dat must be provided when fit is an MArrayLM object.')
     }
-    if (nrow(fit) != nrow(dat) | nrow(fit$design) != ncol(dat)) {
+    if (nrow(fit) != nrow(dat) || nrow(fit$design) != ncol(dat)) {
       stop('dat is not conformal with fit.')
     }
-    if (!identical(rownames(fit), rownames(dat))) {
+    if (!rownames(fit) %>% identical(rownames(dat))) {
       stop('dat and fit must have identical rownames.')
     }
-    if (!is.null(filter)) {
+    if (!(filter %>% is.null)) {
       warning('filter is ignored when fit is an MArrayLM object.')
     }
-  } else if (is(fit, 'DESeqDataSet')) {
+  } else if (fit %>% is('DESeqDataSet')) {
     coefs <- resultsNames(fit)
     p <- ncol(model.matrix(design(fit), colData(fit)))
     if (is.null(rownames(fit))) {
       rownames(fit) <- seq_len(nrow(fit))
     }
-    if (!is.null(dat)) {
+    if (!(dat %>% is.null)) {
       warning('dat is ignored when fit is a DESeqDataSet.')
     }
-    if (is.null(filter)) {
-      stop('filter must be supplied when fit is a DESeqDataSet. See ', 
+    if (filter %>% is.null) {
+      stop('filter must be supplied when fit is a DESeqDataSet. See ',
            '?check_resid.')
     } else if (length(filter) != 2L) {
       stop('filter must be a vector of length 2.')
@@ -171,36 +171,36 @@ qmod <- function(fit,
   } else {
     stop('fit must be an object of class MArrayLM or DESeqDataSet.')
   }
-  if (is.null(contrast)) {
-    if (is.character(coef) & !coef %in% coefs) {
+  if (contrast %>% is.null) {
+    if (coef %>% is.character && !coef %in% coefs) {
       stop(paste0("'", coef, "' not found in fit's design matrix."))
-    } 
-    if (is.numeric(coef) & !coef %in% seq_len(p)) {
+    }
+    if (coef %>% is.numeric && !coef %in% seq_len(p)) {
       stop(paste("No coef number", coef, "found in fit's design matrix."))
     }
-  } else if (is.null(coef)) {
+  } else if (coef %>% is.null) {
     if (length(contrast) != 2L) {
       stop('contrast must be a vector of length 2.')
     }
-    if ((is.character(contrast) & any(!contrast %in% coef)) ||
+    if ((is.character(contrast) && any(!contrast %in% coef)) ||
         (is.numeric(contrast) & any(!contrast %in% seq_len(p)))) {
-      stop("Both coefficients passed to contrast must be in fit's design ', 
+      stop("Both coefficients passed to contrast must be in fit's design ',
            'matrix.")
     }
     } else {
       stop('Exactly one of coef or contrast must be NULL.')
   }
   if (is(fit, 'MArrayLM')) {
-    if (is.null(fit$t) & is.null(fit$F) & is.null(contrast)) {
+    if (is.null(fit$t) && is.null(fit$F) && is.null(contrast)) {
       fit <- eBayes(fit)
-      warning('Standard errors for fit have not been moderated. Running ', 
-              'eBayes before testing for enrichment. See ?eBayes for more ', 
+      warning('Standard errors for fit have not been moderated. Running ',
+              'eBayes before testing for enrichment. See ?eBayes for more ',
               'info.')
     }
-    if (!is.null(fit$t) & !is.null(fit$F) & is.null(coef)) {
-      stop('Standard errors for fit must not be moderated when passing a ', 
-           'contrast to qmod. Use an lmFit output instead. The function will ', 
-           'internally create the appropriate contrast matrix and run eBayes ', 
+    if (!is.null(fit$t) && !is.null(fit$F) && is.null(coef)) {
+      stop('Standard errors for fit must not be moderated when passing a ',
+           'contrast to qmod. Use an lmFit output instead. The function will ',
+           'internally create the appropriate contrast matrix and run eBayes ',
            'on that. See ?contrasts.fit for more info.')
     }
   }
@@ -215,22 +215,22 @@ qmod <- function(fit,
   if (length(geneSets) == 0L) {
     stop('No overlap detected between the genes in fit and those in geneSets.')
   }
-  
+
   # Prep data
-  if (is(fit, 'MArrayLM')) {
+  if (fit %>% is('MArrayLM')) {
     dat <- getEAWP(dat)$exprs
     n <- ncol(dat)
     resid_mat <- residuals(fit, dat)
-    if (is.null(coef)) {
+    if (coef %>% is.null) {
       coef <- 'Contrast'
       suppressWarnings(
-        cm <- makeContrasts(coef = paste(contrast[1], '-', contrast[2]), 
+        cm <- makeContrasts(coef = paste(contrast[1], '-', contrast[2]),
                             levels = coefs)
       )
       fit <- contrasts.fit(fit, cm)
       fit <- eBayes(fit)
-    } 
-    mean <- fit$coefficients[, coef] 
+    }
+    mean <- fit$coefficients[, coef]
     SD <- sqrt(fit$s2.post) * fit$stdev.unscaled[, coef]
     sd.alpha <- SD / (fit$sigma * fit$stdev.unscaled[, coef])
     sd.alpha[is.infinite(sd.alpha)] <- 1L
@@ -238,42 +238,45 @@ qmod <- function(fit,
   } else {
     cnts <- counts(fit)
     n <- ncol(cnts)
-    keep <- rowSums(cpm(cnts) > filter[1]) >= filter[2]
+    keep <- rowSums(cpm(cnts) > filter[1L]) >= filter[2L]
     fit <- fit[keep, , drop = FALSE]
-    cnts <- cpm(counts(fit, normalized = TRUE), log = TRUE, prior.count = 1L)
-    if (is.null(sizeFactors(fit))) {
+    cnts <- fit %>%
+      counts(normalized = TRUE) %>%
+      cpm(log = TRUE, prior.count = 1L)
+    if (sizeFactors(fit) %>% is.null) {
       signal_mat <- assays(fit)[['mu']] / normalizationFactors(fit)
     } else {
       signal_mat <- t(t(assays(fit)[['mu']]) / sizeFactors(fit))
     }
     signal_mat <- cpm(signal_mat, log = TRUE, prior.count = 1L)
     resid_mat <- cnts - signal_mat
-    if (is.null(contrast)) {
+    if (contrast %>% is.null) {
       dds_res <- results(fit, name = coef, independentFiltering = FALSE)
     } else {
-      dds_res <- results(fit, contrast = list(contrast), 
+      dds_res <- results(fit, contrast = list(contrast),
                          independentFiltering = FALSE)
     }
     mean <- dds_res$log2FoldChange
     SD <- dds_res$lfcSE
     sd.alpha <- rep(1L, times = nrow(fit))
-    dof <- rep((ncol(fit) - p), times = nrow(fit)) 
-  }   
+    dof <- rep((ncol(fit) - p), times = nrow(fit))
+  }
   names(mean) <- names(SD) <- names(sd.alpha) <- names(dof) <- rownames(fit)
-  
+
   # Run QuSAGE functions
   res <- newQSarray(mean = mean, SD = SD, sd.alpha = sd.alpha, dof = dof,
                     labels = rep('resid', n))          # Create QSarray obj
   res <- aggregateGeneSet(res, geneSets, n.points)     # PDF per gene set
   res <- calcVIF(resid_mat, res, useCAMERA = FALSE)    # VIF on resid_mat
-  
+
   # Export
   qsTable(res, number = Inf, sort.by = 'p') %>%
     rename(Pathway = pathway.name,
              logFC = log.fold.change,
-           p.value = p.Value) %>%
-    return()
-  
+           p.value = p.Value,
+           q.value = FDR) %>%
+    return(.)
+
 }
 
 
