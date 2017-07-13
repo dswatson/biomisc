@@ -74,11 +74,11 @@ qn.bmiq <- function(targets,
   }
 
   # Load libraries
-  require(ChAMP)
-  require(lumi)
-  require(wateRmelon)
-  require(ChAMPdata)
-  require(impute)
+  suppressPackageStartupMessages(require(ChAMP)) 
+  suppressPackageStartupMessages(require(lumi))
+  suppressPackageStartupMessages(require(wateRmelon))
+  suppressPackageStartupMessages(require(ChAMPdata))
+  suppressPackageStartupMessages(require(impute))
   
   # Filter
   dat <- champ.load(idats)
