@@ -71,14 +71,14 @@ PAC <- function(cc,
     PAC <- expand.grid(k = 2:maxK,
                      Idx = window) %>%
     rowwise(.) %>%
-    mutate(CDF = ecdf(unlist(cc[[k]]$consensusMatrix))(Idx),
+    mutate(CDF = ecdf(cc[[k]]$consensusMatrix %>% keep(lower.tri(.)))(Idx),
              k = as.factor(k)) %>%
     group_by(k) %>%
     mutate(PAC = diff(CDF)) %>%
     distinct(k, PAC) %>%
     as.data.frame(.)
   )
-
+  
   # Export
   if (plot) {
     p <- ggplot(PAC, aes(k, PAC, fill = k)) +
