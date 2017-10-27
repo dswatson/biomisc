@@ -113,7 +113,7 @@ lcpm <- function(dat,
   
   # DESeqDataSet?
   if (is(dat, 'DESeqDataSet')) {
-    require(DESeq2)
+    suppressPackageStartupMessages(require(DESeq2))
     if (!is.null(filter)) {
       keep <- rowSums(cpm(counts(dat))) > filter[1L] >= filter[2L]
       dat <- dat[keep, , drop = FALSE]
