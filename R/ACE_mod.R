@@ -39,7 +39,6 @@ imp <- function(mod,
       } else {
         out[i, j] <- mean((y_tilde - y_hat[i]) / (x_tilde[, j] - dat[i, j]))
       }
-      
     }
   }
 
