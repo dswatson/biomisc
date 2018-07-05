@@ -95,7 +95,7 @@
 #' DESeq2}. \emph{Genome Biology}, \strong{15}:550.
 #'
 #' @examples
-#' # Fit limma model
+#' # Simulate data, fit limma model
 #' library(limma)
 #' eset <- matrix(rnorm(5000 * 10), nrow = 5000, ncol = 10,
 #'                dimnames = list(seq_len(5000), paste0('S', seq_len(10))))
@@ -107,7 +107,7 @@
 #' fit <- eBayes(lmFit(eset, des))
 #'
 #' # Create list of differentially expressed pathways
-#' geneSets = list()
+#' geneSets <- list()
 #' for (i in 0:10) {
 #'   genes <- ((30 * i) + 1):(30 * (i + 1))
 #'   eset[genes, clin$treat == "trt"] <- eset[genes, clin$treat == "trt"] + rnorm(1)
@@ -115,7 +115,7 @@
 #' }
 #'
 #' # Run qmod
-#' top <- qmod(fit, eset, coef = 2, geneSets)
+#' top <- qmod(fit, dat = eset, coef = 2, geneSets = geneSets)
 #'
 #' @export
 #' @importFrom limma eBayes getEAWP
