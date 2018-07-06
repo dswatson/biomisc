@@ -144,25 +144,25 @@ qmod <- function(fit,
     if (is.null(dat)) {
       stop('dat must be provided when fit is an MArrayLM object.')
     }
-    if (nrow(fit) != nrow(dat) || nrow(fit$design) != ncol(dat)) {
+    if (nrow(fit) != nrow(dat) | nrow(fit$design) != ncol(dat)) {
       stop('dat is not conformal with fit.')
     }
-    if (!rownames(fit) %>% identical(rownames(dat))) {
+    if (!identical(rownames(fit), rownames(dat))) {
       stop('dat and fit must have identical rownames.')
     }
-    if (!(filter %>% is.null)) {
+    if (!is.null(filter)) {
       warning('filter is ignored when fit is an MArrayLM object.')
     }
-  } else if (fit %>% is('DESeqDataSet')) {
+  } else if (is(fit, 'DESeqDataSet')) {
     coefs <- resultsNames(fit)
     p <- ncol(model.matrix(design(fit), colData(fit)))
     if (is.null(rownames(fit))) {
       rownames(fit) <- seq_len(nrow(fit))
     }
-    if (!(dat %>% is.null)) {
+    if (!is.null(dat)) {
       warning('dat is ignored when fit is a DESeqDataSet.')
     }
-    if (filter %>% is.null) {
+    if (is.null(filter)) {
       stop('filter must be supplied when fit is a DESeqDataSet. See ',
            '?check_resid.')
     } else if (length(filter) != 2L) {
@@ -171,18 +171,18 @@ qmod <- function(fit,
   } else {
     stop('fit must be an object of class MArrayLM or DESeqDataSet.')
   }
-  if (contrast %>% is.null) {
-    if (coef %>% is.character && !coef %in% coefs) {
+  if (is.null(contrast)) {
+    if (is.character(coef) & !coef %in% coefs) {
       stop(paste0("'", coef, "' not found in fit's design matrix."))
     }
-    if (coef %>% is.numeric && !coef %in% seq_len(p)) {
+    if (is.numeric(coef) & !coef %in% seq_len(p)) {
       stop(paste("No coef number", coef, "found in fit's design matrix."))
     }
-  } else if (coef %>% is.null) {
+  } else if (is.null(coef)) {
     if (length(contrast) != 2L) {
       stop('contrast must be a vector of length 2.')
     }
-    if ((is.character(contrast) && any(!contrast %in% coef)) ||
+    if ((is.character(contrast) & any(!contrast %in% coefs)) ||
         (is.numeric(contrast) & any(!contrast %in% seq_len(p)))) {
       stop("Both coefficients passed to contrast must be in fit's design ',
            'matrix.")
@@ -191,13 +191,13 @@ qmod <- function(fit,
       stop('Exactly one of coef or contrast must be NULL.')
   }
   if (is(fit, 'MArrayLM')) {
-    if (is.null(fit$t) && is.null(fit$F) && is.null(contrast)) {
+    if (is.null(fit$t) & is.null(fit$F) & is.null(contrast)) {
       fit <- eBayes(fit)
       warning('Standard errors for fit have not been moderated. Running ',
               'eBayes before testing for enrichment. See ?eBayes for more ',
               'info.')
     }
-    if (!is.null(fit$t) && !is.null(fit$F) && is.null(coef)) {
+    if (!is.null(fit$t) & !is.null(fit$F) & is.null(coef)) {
       stop('Standard errors for fit must not be moderated when passing a ',
            'contrast to qmod. Use an lmFit output instead. The function will ',
            'internally create the appropriate contrast matrix and run eBayes ',
@@ -217,16 +217,15 @@ qmod <- function(fit,
   }
 
   # Prep data
-  if (fit %>% is('MArrayLM')) {
+  if (is(fit, 'MArrayLM')) {
     dat <- getEAWP(dat)$exprs
     n <- ncol(dat)
     resid_mat <- residuals(fit, dat)
-    if (coef %>% is.null) {
+    if (is.null(coef)) {
       coef <- 'Contrast'
-      suppressWarnings(
-        cm <- makeContrasts(coef = paste(contrast[1], '-', contrast[2]),
-                            levels = coefs)
-      )
+      cm <- makeContrasts(contrasts = paste(contrast[1], '-', contrast[2]), 
+                          levels = coefs)
+      colnames(cm) <- coef
       fit <- contrasts.fit(fit, cm)
       fit <- eBayes(fit)
     }
